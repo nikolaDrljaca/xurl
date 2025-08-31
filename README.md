@@ -76,6 +76,8 @@ Content-Type: application/json
 
 ###
 GET /hops/{key} HTTP/1.1
+
+301 Moved Permanently ## 302 Found (Moved Temporarily)
 ```
 
 ```mermaid
