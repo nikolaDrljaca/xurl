@@ -170,3 +170,20 @@ architecture-beta
   * If creation is not working, redirection+analytics still works
 * Still has the same benefits of the design above
 * Increases cognitive load and deployment complexity
+
+---
+
+The second design can be improved even further by introducing a message queue into the write path.
+In cases where the service is experiencing not only high read but high write situations, this can be an improvement.
+This design introduces:
+* High throughput on both paths
+* Eventual consistency
+* High cognitive load, high deployment complexity
+
+How it works:
+* A message queue is used to hand off write messages. The service generates a hop key, hands off the message
+to the queue and returns, greatly increasing response times.
+* A service sits in between the queue and the database. It consumes each message, one by one in order, processes
+and stores them into the cache and the database achieving consistency.
+* If this in-between service goes down, messages are stored in the queue and will be processed. This service should have
+a backup instance running always and a rapid startup time.
