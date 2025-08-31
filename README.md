@@ -43,4 +43,74 @@ If the server starts successfully, you'll see the following output:
 ```
 
 ## Design
-TODO
+
+Main points to consider:
+
+1. Gather Requirements
+2. API Design / Database Design
+3. High-Level system design
+4. Deep dives
+
+### Requirements
+
+Functional Requirements (domain sourcing):
+1. URL shortening - create a unique URL 
+2. URL redirection
+3. Link analytics (number of clicks)
+4. Custom links - instead of randomly generated characters
+
+Non-functional requirements (technical):
+1. Minimize redirect latency—consider 301/302 status codes for cashing. This can interfere with analytics
+2. How many URLs should the system support? Lets say 1 billion
+-> We want 7 characters for keys, gives ~ 8b combinations (for 26 ascii characters)
+3. High-Read Low-Write service
+4. URL shortening strategy - how are keys created?
+
+### API / Database Design
+
+```http request
+POST /hops HTTP/1.1
+Content-Type: application/json
+
+{ "url" : "some-slug" }
+
+###
+GET /hops/{key} HTTP/1.1
+```
+
+```mermaid
+erDiagram 
+    HOP {
+        uuid id
+        text hop_key
+        text long_url
+        timestamp created_at
+    }
+```
+
+### System Design
+
+Characteristics:
+* A hop key is 7 alphabetic characters, gives pool of 8b mappings.
+* Given the database structure, we store:
+  * 70 bytes at least per record, for 1b records thats ~70GB (minimum)
+  * 36 (id) + 7 (key) + 19 (time) + ~8(db) + x(url)
+* This is high-read, low-write service, so should be optimized for reading
+
+Key creation strategy:
+* Use an incrementing counter and base62 encoding
+  * This assumes the base62 alphabet is used for keys.
+  * Each key creation the counter is incremented and that value is encoded with base62 resulting in the key.
+  * Offers predictability.
+  * If the service holds this counter in-memory, increasing the number of instances will create issues and collisions
+  since each instance will start with a new counter (assuming it starts from 0).
+  * To solve this Redis (or any other in-memory single threaded cache) can be used.
+* Use a randomly generated string **our pick**
+    * Define an alphabet and use seeds or secure-random algorithms to generate keys.
+    * Instances are stateless.
+    * Small chances of collisions can be handled with retries.
+* Hash input URL and slice length of the key
+  * A hashing algorithm (md5, sha256) is applied once/twice to a URL and the first/last X characters are chosen
+  * Offers predictability
+  * Instances are stateless
+  * Collision handling slightly more complex since you have to keep track of how many times the URL was hashed
