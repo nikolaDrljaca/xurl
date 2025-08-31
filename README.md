@@ -114,3 +114,59 @@ Key creation strategy:
   * Offers predictability
   * Instances are stateless
   * Collision handling slightly more complex since you have to keep track of how many times the URL was hashed
+
+Suggested designs:
+
+```mermaid
+architecture-beta
+    group api(cloud)[XURL]
+
+    service client(internet)[Client]
+    service xurl(server)[Service] in api
+    service cache(database)[Cache] in api
+    service db(database)[Database] in api
+
+    client:R -- L:xurl
+    xurl:T -- B:cache
+    xurl:R -- L:db 
+```
+
+* To optimize for high-read, an in memory cache is used. 
+* The overall design is straightforward and has low cognitive load.
+* Low fault tolerance, if the service is down everything is unavailable.
+
+---
+
+```mermaid
+architecture-beta
+    group api(cloud)[XURL]
+
+    service client(internet)[Client]
+    service gw(server)[Gateway] in api
+    service read(server)[read] in api
+    service write(server)[write] in api
+    service cache(database)[Cache] in api
+    service db(database)[Database] in api
+    junction jmain
+    junction jread
+    junction jwrite
+    junction jdb
+
+    client:R -- L:gw
+    gw:R -- L:jmain
+    read:B -- T:jmain
+    write:T -- B:jmain
+    read:L -- R:cache
+
+    read:R -- L:jread
+    jread:B -- T:jdb
+    jdb:R -- L:db
+    write:R -- L:jwrite
+    jwrite:T -- B:jdb
+    
+```
+
+* Separates creation and redirection into separate services to increase fault tolerance.
+  * If creation is not working, redirection+analytics still works
+* Still has the same benefits of the design above
+* Increases cognitive load and deployment complexity
