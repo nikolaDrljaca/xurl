@@ -7,8 +7,10 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureDatabase()
     configureFrameworks()
     configureSerialization()
     configureHTTP()
     configureRouting()
+    configureHopRoutes()
 }
