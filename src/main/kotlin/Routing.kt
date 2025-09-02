@@ -21,6 +21,12 @@ data class CreateHopPayload(
     val url: String
 )
 
+// TODO: introduce logging
+// TODO: introduce sqlite file instead of h2 in mem db
+// TODO: introduce nginx reverse proxy and docker-compose file for deployment
+// TODO: review other todos (create hop retries etc)
+// TODO: investigate how to introduce redis cache, create docker-compose.local for it
+
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
