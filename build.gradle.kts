@@ -19,7 +19,7 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.java.time)
-    implementation(libs.h2)
+    implementation(libs.sqlite)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)

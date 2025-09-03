@@ -78,7 +78,7 @@ class CreateHopImpl: CreateHop {
     ): T? {
         var result = runCatching { block() }
         var hasFailed = result.isFailure
-        if (hasFailed.not()) {
+        if (result.isSuccess) {
             return result.getOrNull()
         }
 
@@ -86,6 +86,7 @@ class CreateHopImpl: CreateHop {
         while (count < attempts && hasFailed) {
             count++
             result = runCatching { block() }
+                .onFailure { println(it.localizedMessage) }
             hasFailed = result.isFailure
         }
         return result.getOrNull()
