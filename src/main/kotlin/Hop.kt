@@ -23,6 +23,8 @@ object HopTable: Table() {
 
     val createdAt = text("created_at")
         .default(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+
+    override val primaryKey = PrimaryKey(id)
 }
 
 data class Hop(
@@ -55,16 +57,38 @@ class CreateHopImpl: CreateHop {
     override suspend fun execute(url: String): Hop = query {
         // create new key and insert
         // TODO handle retries in case of sql exceptions
-        val row = HopTable.insert {
-            it[HopTable.hopKey] = createKey()
-            it[HopTable.longUrl] = url
+        val row = retry {
+            HopTable.insert {
+                it[HopTable.hopKey] = createKey()
+                it[HopTable.longUrl] = url
+            }
         }
+        requireNotNull(row) { "Unable to generate unique hop key!" }
         Hop(
             id = row[HopTable.id],
             key = row[HopTable.hopKey],
             url = row[HopTable.longUrl],
             createdAt = LocalDate.parse(row[HopTable.createdAt])
         )
+    }
+
+    private fun <T> retry(
+        attempts: Int = 5,
+        block: () -> T,
+    ): T? {
+        var result = runCatching { block() }
+        var hasFailed = result.isFailure
+        if (hasFailed.not()) {
+            return result.getOrNull()
+        }
+
+        var count = 0
+        while (count < attempts && hasFailed) {
+            count++
+            result = runCatching { block() }
+            hasFailed = result.isFailure
+        }
+        return result.getOrNull()
     }
 
     private fun createKey(): String {
