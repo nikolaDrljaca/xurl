@@ -21,10 +21,7 @@ data class CreateHopPayload(
     val url: String
 )
 
-// TODO: introduce logging
-// TODO: introduce sqlite file instead of h2 in mem db
 // TODO: introduce nginx reverse proxy and docker-compose file for deployment
-// TODO: review other todos (create hop retries etc)
 // TODO: investigate how to introduce redis cache, create docker-compose.local for it
 
 fun Application.configureHopRoutes() = routing {
@@ -41,9 +38,10 @@ fun Application.configureHopRoutes() = routing {
         post {
             // parse payload
             val payload = call.receive<CreateHopPayload>()
-            // create hop
+            log.info("createHop called with $payload")
+
             val hop = createHop.execute(payload.url)
-            // respond
+
             call.respond(HttpStatusCode.Created, hop.dto())
         }
 
@@ -55,9 +53,14 @@ fun Application.configureHopRoutes() = routing {
         get("/{hop_key}") {
             val key = call.pathParameters["hop_key"]
             requireNotNull(key)
+            log.info("findHop called with $key")
+
             val hop = findHop.execute(key)
-            requireNotNull(hop)
-            call.respondRedirect(url = hop.url, permanent = false)
+            when {
+                hop != null -> call.respondRedirect(url = hop.url, permanent = false)
+
+                else -> call.respond(status = HttpStatusCode.NotFound, message = "")
+            }
         }
     }
 }

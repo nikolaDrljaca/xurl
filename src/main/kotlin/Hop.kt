@@ -1,5 +1,7 @@
 package com.drbrosdev
 
+import io.ktor.http.*
+import io.ktor.util.logging.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
@@ -53,10 +55,13 @@ fun interface CreateHop {
     suspend fun execute(url: String): Hop
 }
 
+internal val LOG = KtorSimpleLogger("HopLogger")
+
 class CreateHopImpl: CreateHop {
     override suspend fun execute(url: String): Hop = query {
+        // verify url is valid -> move to a domain model and smart constructor
+        requireNotNull(parseUrl(url)) { "$url is not a valid URL." }
         // create new key and insert
-        // TODO handle retries in case of sql exceptions
         val row = retry {
             HopTable.insert {
                 it[HopTable.hopKey] = createKey()
@@ -69,7 +74,9 @@ class CreateHopImpl: CreateHop {
             key = row[HopTable.hopKey],
             url = row[HopTable.longUrl],
             createdAt = LocalDate.parse(row[HopTable.createdAt])
-        )
+        ).also {
+            LOG.info("Generated ${it.key} for ${it.url}")
+        }
     }
 
     private fun <T> retry(
