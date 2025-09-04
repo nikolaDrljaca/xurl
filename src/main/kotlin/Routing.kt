@@ -28,39 +28,37 @@ fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
 
-    route("/hops") {
-        /*
-        POST /hops HTTP/1.1
-        Content-Type: application/json
+    /*
+    POST /hops HTTP/1.1
+    Content-Type: application/json
 
-        { "url" : "some-slug" }
-         */
-        post {
-            // parse payload
-            val payload = call.receive<CreateHopPayload>()
-            log.info("createHop called with $payload")
+    { "url" : "some-slug" }
+     */
+    post("/") {
+        // parse payload
+        val payload = call.receive<CreateHopPayload>()
+        log.info("createHop called with $payload")
 
-            val hop = createHop.execute(payload.url)
+        val hop = createHop.execute(payload.url)
 
-            call.respond(HttpStatusCode.Created, hop.dto())
-        }
+        call.respond(HttpStatusCode.Created, hop.dto())
+    }
 
-        /*
-        GET /hops/{key} HTTP/1.1
+    /*
+    GET /hops/{key} HTTP/1.1
 
-        301 Moved Permanently ## 302 Found (Moved Temporarily)
-         */
-        get("/{hop_key}") {
-            val key = call.pathParameters["hop_key"]
-            requireNotNull(key)
-            log.info("findHop called with $key")
+    301 Moved Permanently ## 302 Found (Moved Temporarily)
+     */
+    get("/{hop_key}") {
+        val key = call.pathParameters["hop_key"]
+        requireNotNull(key)
+        log.info("findHop called with $key")
 
-            val hop = findHop.execute(key)
-            when {
-                hop != null -> call.respondRedirect(url = hop.url, permanent = false)
+        val hop = findHop.execute(key)
+        when {
+            hop != null -> call.respondRedirect(url = hop.url, permanent = false)
 
-                else -> call.respond(status = HttpStatusCode.NotFound, message = "")
-            }
+            else -> call.respond(status = HttpStatusCode.NotFound, message = "")
         }
     }
 }

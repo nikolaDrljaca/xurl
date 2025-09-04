@@ -9,8 +9,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Connection
 
 fun Application.configureDatabase() {
-    val url = environment.config.propertyOrNull("database.url")?.getString()
-    requireNotNull(url) { "Database URL not specified!" }
+    val path = environment.config.propertyOrNull("database.url")?.getString()
+    requireNotNull(path) { "Database URL not specified!" }
+    val url = "$path?journal_mode=WAL&busy_timeout=5000&foreign_keys=true"
 
     val database = Database.connect(
         url = url,

@@ -6,4 +6,4 @@ ktor:
         port: 5000
 
 database:
-    url: "$DB_URL:jdbc:sqlite:./app-data/xurl.db"
+    url: "$DB_URL:jdbc:sqlite:./app-data/hop-db.sqlite"

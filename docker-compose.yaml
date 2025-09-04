@@ -1,0 +1,16 @@
+# PROD docker compose script
+
+services:
+  hop-service:
+    build: .
+    container_name: hop-service
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount SQLite file into container at /data/db.sqlite
+      - sqlite-data:/data
+    environment:
+      DB_URL: "jdbc:sqlite:/data/db.sqlite"
+
+volumes:
+  sqlite-data:
