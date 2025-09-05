@@ -12,7 +12,7 @@ services:
     environment:
       DB_URL: "jdbc:sqlite:/data/db.sqlite"
       # NOTE: Will be added on Coolify as env variable
-      #API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
+      API_KEY: ${API_KEY}
 
 volumes:
   sqlite-data:
