@@ -7,3 +7,6 @@ ktor:
 
 database:
     url: "$DB_URL:jdbc:sqlite:./app-data/hop-db.sqlite"
+
+security:
+    api_key: "$API_KEY:ed5b50b4-a8ef-43d6-8622-9f67f35700e5"

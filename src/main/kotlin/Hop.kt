@@ -75,7 +75,7 @@ class CreateHopImpl: CreateHop {
             url = row[HopTable.longUrl],
             createdAt = LocalDate.parse(row[HopTable.createdAt])
         ).also {
-            LOG.info("Generated ${it.key} for ${it.url}")
+            LOG.info("Generated ${it.key} for ${it.url}.")
         }
     }
 
@@ -102,7 +102,6 @@ class CreateHopImpl: CreateHop {
     private fun createKey(): String {
         return RandomStringUtils.secure()
             .nextAlphabetic(7)
-            .uppercase()
     }
 }
 

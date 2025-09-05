@@ -11,4 +11,5 @@ services:
       - "./app-data:/data"
     environment:
       DB_URL: "jdbc:sqlite:/data/hop-db.sqlite"
+      API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
 

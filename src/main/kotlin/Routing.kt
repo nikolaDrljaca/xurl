@@ -21,7 +21,6 @@ data class CreateHopPayload(
     val url: String
 )
 
-// TODO: introduce nginx reverse proxy and docker-compose file for deployment
 // TODO: investigate how to introduce redis cache, create docker-compose.local for it
 
 fun Application.configureHopRoutes() = routing {
@@ -37,7 +36,7 @@ fun Application.configureHopRoutes() = routing {
     post("/") {
         // parse payload
         val payload = call.receive<CreateHopPayload>()
-        log.info("createHop called with $payload")
+        log.info("createHop called with $payload.")
 
         val hop = createHop.execute(payload.url)
 
@@ -52,7 +51,7 @@ fun Application.configureHopRoutes() = routing {
     get("/{hop_key}") {
         val key = call.pathParameters["hop_key"]
         requireNotNull(key)
-        log.info("findHop called with $key")
+        log.info("findHop called with $key.")
 
         val hop = findHop.execute(key)
         when {
