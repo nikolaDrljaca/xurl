@@ -22,6 +22,7 @@ data class CreateHopPayload(
 )
 
 // TODO: investigate how to introduce redis cache, create docker-compose.local for it
+// TODO: Configure health check endpoints - make sure to exclude them from api auth
 
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies

@@ -11,11 +11,11 @@ internal fun ApplicationEnvironment.apiKey(): String {
 }
 
 class ApiKeyAuthPluginConfiguration {
-    private val _allowedPaths = mutableSetOf<String>()
-    val allowedPaths: Set<String> = _allowedPaths
+    private val _protectedPaths = mutableSetOf<String>()
+    val protectedPaths: Set<String> = _protectedPaths
 
-    fun allow(path: String) {
-        _allowedPaths.add(path)
+    fun protect(path: String) {
+        _protectedPaths.add(path)
     }
 }
 
@@ -30,7 +30,7 @@ val ApiKeyAuthPlugin = createApplicationPlugin(
         val incoming = call.request.headers[HopHeaders.API_KEY]
         val url = call.request.path()
 
-        if (url !in pluginConfig.allowedPaths) {
+        if (url in pluginConfig.protectedPaths) {
             when {
                 apiKey != incoming -> call.respond(HttpStatusCode.Unauthorized)
             }
@@ -39,6 +39,8 @@ val ApiKeyAuthPlugin = createApplicationPlugin(
 }
 
 fun Application.configureSecurity() {
-    install(ApiKeyAuthPlugin) {}
+    install(ApiKeyAuthPlugin) {
+        protect("/")
+    }
 }
 
