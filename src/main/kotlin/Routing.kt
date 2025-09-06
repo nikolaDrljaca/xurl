@@ -15,6 +15,9 @@ fun Application.configureRouting() {
         get("/info") {
             call.respondText("hop-service")
         }
+        get("/health") {
+            call.respond(HttpStatusCode.OK)
+        }
     }
 }
 
@@ -23,8 +26,6 @@ data class CreateHopPayload(
     val url: String
 )
 
-// TODO: investigate how to introduce redis cache, create docker-compose.local for it
-// TODO: Configure health check endpoints - make sure to exclude them from api auth
 
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
@@ -64,7 +65,7 @@ fun Application.configureHopRoutes() = routing {
         when {
             hop != null -> call.respondRedirect(url = hop, permanent = false)
 
-            else -> call.respond(status = HttpStatusCode.NotFound, message = "")
+            else -> call.respond(HttpStatusCode.NotFound)
         }
     }
 }
