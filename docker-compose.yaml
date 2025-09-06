@@ -13,6 +13,27 @@ services:
       DB_URL: "jdbc:sqlite:/data/db.sqlite"
       # NOTE: Will be added on Coolify as env variable
       API_KEY: ${API_KEY}
+      VALKEY_HOST: "hop-cache"
+      VALKEY_PORT: "6379"
+    depends_on:
+      hop-cache:
+        condition: service_healthy
+
+  hop-cache:
+    image: "valkey/valkey:8-alpine"
+    container_name: hop-cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 20s
+      retries: 3
+    command: |
+      valkey-server --save "" 
+          --appendonly no
+          --maxmemory 256mb 
+          --maxmemory-policy allkeys-lru
 
 volumes:
   sqlite-data:

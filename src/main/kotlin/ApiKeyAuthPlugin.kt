@@ -28,6 +28,7 @@ val ApiKeyAuthPlugin = createApplicationPlugin(
 
     onCall { call ->
         val incoming = call.request.headers[HopHeaders.API_KEY]
+        // Path here does not contain query parameters!
         val url = call.request.path()
 
         if (url in pluginConfig.protectedPaths) {

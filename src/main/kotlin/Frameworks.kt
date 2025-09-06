@@ -1,7 +1,11 @@
 package com.drbrosdev
 
+import glide.api.GlideClient
+import glide.api.models.configuration.GlideClientConfiguration
+import glide.api.models.configuration.NodeAddress
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
+import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.TransactionManager
@@ -25,10 +29,41 @@ fun Application.configureDatabase() {
     }
 }
 
+data class ValkeyConfiguration(
+    val host: String,
+    val port: Int
+)
+
+fun ApplicationEnvironment.valkeyConfiguration(): ValkeyConfiguration {
+    val hostProp = requireNotNull(config.propertyOrNull("valkey.host")) {
+        "Valkey Host not set! Check environment variables."
+    }
+    val portProp = requireNotNull(config.propertyOrNull("valkey.port")) {
+        "Valkey Port not set! Check environment variables."
+    }
+    return ValkeyConfiguration(
+        host = hostProp.getString(),
+        port = portProp.getString().toInt()
+    )
+}
+
 fun Application.configureFrameworks() {
+    val valkeyConfig = environment.valkeyConfiguration()
 
     dependencies {
         provide<CreateHop> { CreateHopImpl() }
         provide<FindHopByKey> { FindHopByKeyImpl() }
+
+        provide<GlideClient> {
+            val config = GlideClientConfiguration.builder()
+                .address(NodeAddress.builder()
+                    .host(valkeyConfig.host)
+                    .port(valkeyConfig.port)
+                    .build())
+                .requestTimeout(500)
+                .build()
+
+            GlideClient.createClient(config).await()
+        } cleanup { it.close() }
     }
 }

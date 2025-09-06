@@ -68,17 +68,86 @@ Non-functional requirements (technical):
 
 ### API / Database Design
 
-```http request
-POST /hops HTTP/1.1
-Content-Type: application/json
+For the API design, there are two main endpoints:
+1. One to create new short links—which is protected via an API key
+2. One for redirection
 
-{ "url" : "some-slug" }
+```yaml
+openapi: 3.0.3
+info:
+  title: Hops API
+  version: 1.0.0
 
-###
-GET /hops/{key} HTTP/1.1
+paths:
+  /:
+    post:
+      summary: Create a new hop
+      security:
+        - ApiKeyAuth: []   # Require X-Api-Key for this endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  example: some-slug
+      responses:
+        "201":
+          description: Hop successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    example: abc123
+        "401":
+          description: Unauthorized – missing or invalid API key
 
-301 Moved Permanently ## 302 Found (Moved Temporarily)
+  /{key}:
+    get:
+      summary: Retrieve a hop and redirect
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the hop
+      responses:
+        "301":
+          description: Moved Permanently
+          headers:
+            Location:
+              description: Redirect target URL
+              schema:
+                type: string
+                format: uri
+        "302":
+          description: Found (Moved Temporarily)
+          headers:
+            Location:
+              description: Redirect target URL
+              schema:
+                type: string
+                format: uri
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
 ```
+
+For the database schema, it is really simple for the initial set of requirements.
+A single lookup table is enough to store this information.
 
 ```mermaid
 erDiagram 

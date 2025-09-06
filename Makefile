@@ -3,3 +3,9 @@ run-prodlike:
 
 stop-prodlike:
 	docker compose -f docker-compose.prodlike.yaml down
+
+run-local:
+	docker compose -f docker-compose.local.yaml up --build -d
+
+stop-local:
+	docker compose -f docker-compose.local.yaml down

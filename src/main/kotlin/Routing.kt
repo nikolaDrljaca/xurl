@@ -1,17 +1,22 @@
 package com.drbrosdev
 
+import glide.api.GlideClient
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.future.await
 import kotlinx.serialization.Serializable
 
 fun Application.configureRouting() {
     routing {
         get("/info") {
             call.respondText("hop-service")
+        }
+        get("/health") {
+            call.respond(HttpStatusCode.OK)
         }
     }
 }
@@ -21,12 +26,11 @@ data class CreateHopPayload(
     val url: String
 )
 
-// TODO: investigate how to introduce redis cache, create docker-compose.local for it
-// TODO: Configure health check endpoints - make sure to exclude them from api auth
 
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
+    val cache: GlideClient by dependencies
 
     /*
     POST /hops HTTP/1.1
@@ -40,6 +44,7 @@ fun Application.configureHopRoutes() = routing {
         log.info("createHop called with $payload.")
 
         val hop = createHop.execute(payload.url)
+        cache.set(hop.key, hop.url).await().also { log.info("Stored ${hop.url} in cache.") }
 
         call.respond(HttpStatusCode.Created, hop.dto())
     }
@@ -54,11 +59,13 @@ fun Application.configureHopRoutes() = routing {
         requireNotNull(key)
         log.info("findHop called with $key.")
 
-        val hop = findHop.execute(key)
-        when {
-            hop != null -> call.respondRedirect(url = hop.url, permanent = false)
+        val hop = cache.get(key).await().also { if (it != null) { log.info("Cache hit for $it.") } }
+            ?: findHop.execute(key)?.url
 
-            else -> call.respond(status = HttpStatusCode.NotFound, message = "")
+        when {
+            hop != null -> call.respondRedirect(url = hop, permanent = false)
+
+            else -> call.respond(HttpStatusCode.NotFound)
         }
     }
 }
