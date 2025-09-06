@@ -1,0 +1,14 @@
+# PROD docker compose script
+
+services:
+  cache:
+    image: "valkey/valkey:8-alpine"
+    container_name: hop-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: |
+      valkey-server --save "" 
+          --appendonly no
+          --maxmemory 256mb 
+          --maxmemory-policy allkeys-lru

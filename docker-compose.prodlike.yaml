@@ -12,4 +12,17 @@ services:
     environment:
       DB_URL: "jdbc:sqlite:/data/hop-db.sqlite"
       API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
+      VALKEY_HOST: "hop-cache"
+      VALKEY_PORT: "6379"
+
+  hop-cache:
+    image: "valkey/valkey:8-alpine"
+    container_name: hop-cache
+    ports:
+      - "6379:6379"
+    command: |
+      valkey-server --save "" 
+          --appendonly no
+          --maxmemory 256mb 
+          --maxmemory-policy allkeys-lru
 

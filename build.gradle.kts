@@ -11,6 +11,7 @@ application {
     mainClass = "io.ktor.server.netty.EngineMain"
 }
 
+
 dependencies {
     implementation(libs.ktor.server.di)
     implementation(libs.ktor.server.core)
@@ -28,4 +29,5 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
 
     implementation(libs.commons.lang)
+    implementation(libs.valkey.glide)
 }
