@@ -30,7 +30,6 @@ data class CreateHopPayload(
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
-    val cache: GlideClient by dependencies
 
     /*
     POST /hops HTTP/1.1
@@ -39,12 +38,13 @@ fun Application.configureHopRoutes() = routing {
     { "url" : "some-slug" }
      */
     post("/") {
+        val cache: GlideClient? = dependencies.resolve()
         // parse payload
         val payload = call.receive<CreateHopPayload>()
         log.info("createHop called with $payload.")
 
         val hop = createHop.execute(payload.url)
-        cache.set(hop.key, hop.url).await().also { log.info("Stored ${hop.url} in cache.") }
+        cache?.set(hop.key, hop.url)?.await()?.also { log.info("Stored ${hop.url} in cache.") }
 
         call.respond(HttpStatusCode.Created, hop.dto())
     }
@@ -55,11 +55,12 @@ fun Application.configureHopRoutes() = routing {
     301 Moved Permanently ## 302 Found (Moved Temporarily)
      */
     get("/{hop_key}") {
+        val cache: GlideClient? = dependencies.resolve()
         val key = call.pathParameters["hop_key"]
         requireNotNull(key)
         log.info("findHop called with $key.")
 
-        val hop = cache.get(key).await().also { if (it != null) { log.info("Cache hit for $it.") } }
+        val hop = cache?.get(key)?.await().also { if (it != null) { log.info("Cache hit for $it.") } }
             ?: findHop.execute(key)?.url
 
         when {
