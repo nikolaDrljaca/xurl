@@ -14,7 +14,7 @@ services:
       API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
       VALKEY_HOST: "hop-cache"
       VALKEY_PORT: "6379"
-      BASE_PATH: "http://localhost"
+      BASE_PATH: "http://localhost:5000"
     depends_on:
       hop-cache:
           condition: service_healthy
