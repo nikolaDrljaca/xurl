@@ -9,6 +9,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.future.await
 import kotlinx.serialization.Serializable
+import java.time.format.DateTimeFormatter
 
 fun Application.configureRouting() {
     routing {
@@ -21,22 +22,27 @@ fun Application.configureRouting() {
     }
 }
 
+// ===
+
 @Serializable
 data class CreateHopPayload(
     val url: String
 )
 
+@Serializable
+data class HopDto(
+    val id: String,
+    val key: String,
+    val url: String,
+    val fullUrl: String,
+    val createdAt: String
+)
 
 fun Application.configureHopRoutes() = routing {
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
+    val config: HopServiceConfiguration by dependencies
 
-    /*
-    POST /hops HTTP/1.1
-    Content-Type: application/json
-
-    { "url" : "some-slug" }
-     */
     post("/") {
         val cache: GlideClient? = dependencies.resolve()
         // parse payload
@@ -45,15 +51,18 @@ fun Application.configureHopRoutes() = routing {
 
         val hop = createHop.execute(payload.url)
         cache?.set(hop.key, hop.url)?.await()?.also { log.info("Stored ${hop.url} in cache.") }
-
-        call.respond(HttpStatusCode.Created, hop.dto())
+        // prepare response
+        val response = HopDto(
+            id = hop.id.toString(),
+            key = hop.key,
+            url = hop.url,
+            createdAt = hop.createdAt.format(DateTimeFormatter.ISO_DATE),
+            fullUrl = "${config.basePath}/${hop.key}"
+        )
+        call.respond(HttpStatusCode.Created, response)
     }
 
-    /*
-    GET /hops/{key} HTTP/1.1
 
-    301 Moved Permanently ## 302 Found (Moved Temporarily)
-     */
     get("/{hop_key}") {
         val cache: GlideClient? = dependencies.resolve()
         val key = call.pathParameters["hop_key"]

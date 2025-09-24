@@ -35,6 +35,10 @@ data class ValkeyConfiguration(
     val port: Int
 )
 
+data class HopServiceConfiguration(
+    val basePath: String
+)
+
 fun ApplicationEnvironment.valkeyConfiguration(): ValkeyConfiguration {
     val hostProp = requireNotNull(config.propertyOrNull("valkey.host")) {
         "Valkey Host not set! Check environment variables."
@@ -45,6 +49,15 @@ fun ApplicationEnvironment.valkeyConfiguration(): ValkeyConfiguration {
     return ValkeyConfiguration(
         host = hostProp.getString(),
         port = portProp.getString().toInt()
+    )
+}
+
+fun ApplicationEnvironment.configuration(): HopServiceConfiguration {
+    val basePathProp = requireNotNull(config.propertyOrNull("app.base_path")) {
+        "Application base path must be set! Check environment variables"
+    }
+    return HopServiceConfiguration(
+        basePath = basePathProp.getString()
     )
 }
 
@@ -73,10 +86,12 @@ fun Application.configureFrameworks() {
         log.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}")
     }
     val valkeyError = { log.warn("Could not start Glide Client!") }
+    val appConfig = environment.configuration()
 
     dependencies {
         provide<CreateHop> { CreateHopImpl() }
         provide<FindHopByKey> { FindHopByKeyImpl() }
+        provide<HopServiceConfiguration> { appConfig }
 
         provide<GlideClient?> {
             createGlideClient(valkeyConfig)

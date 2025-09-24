@@ -3,7 +3,6 @@ package com.drbrosdev
 import io.ktor.http.*
 import io.ktor.util.logging.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.RandomStringUtils
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
@@ -34,21 +33,6 @@ data class Hop(
     val key: String,
     val url: String,
     val createdAt: LocalDate
-)
-
-fun Hop.dto() = HopDto(
-    id = id.toString(),
-    key = key,
-    url = url,
-    createdAt = createdAt.format(DateTimeFormatter.ISO_DATE)
-)
-
-@Serializable
-data class HopDto(
-    val id: String,
-    val key: String,
-    val url: String,
-    val createdAt: String
 )
 
 fun interface CreateHop {

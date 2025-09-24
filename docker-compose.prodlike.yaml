@@ -14,6 +14,7 @@ services:
       API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
       VALKEY_HOST: "hop-cache"
       VALKEY_PORT: "6379"
+      BASE_PATH: "http://localhost"
     depends_on:
       hop-cache:
           condition: service_healthy
@@ -21,8 +22,6 @@ services:
   hop-cache:
     image: "valkey/valkey:8-alpine"
     container_name: hop-cache
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
