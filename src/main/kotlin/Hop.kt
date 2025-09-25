@@ -28,6 +28,8 @@ object HopTable: Table() {
     override val primaryKey = PrimaryKey(id)
 }
 
+// Domain
+
 data class Hop(
     val id: UUID,
     val key: String,
@@ -39,7 +41,7 @@ fun interface CreateHop {
     suspend fun execute(url: String): Hop
 }
 
-internal val LOG = KtorSimpleLogger("HopLogger")
+private val LOG = KtorSimpleLogger("HopLogger")
 
 class CreateHopImpl: CreateHop {
     override suspend fun execute(url: String): Hop = query {

@@ -5,6 +5,7 @@ import glide.api.models.configuration.GlideClientConfiguration
 import glide.api.models.configuration.NodeAddress
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
+import io.ktor.util.logging.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.sql.Database
@@ -30,13 +31,13 @@ fun Application.configureDatabase() {
     }
 }
 
+// DI
+
+private val LOG = KtorSimpleLogger("DIContainer")
+
 data class ValkeyConfiguration(
     val host: String,
     val port: Int
-)
-
-data class HopServiceConfiguration(
-    val basePath: String
 )
 
 fun ApplicationEnvironment.valkeyConfiguration(): ValkeyConfiguration {
@@ -52,16 +53,7 @@ fun ApplicationEnvironment.valkeyConfiguration(): ValkeyConfiguration {
     )
 }
 
-fun ApplicationEnvironment.configuration(): HopServiceConfiguration {
-    val basePathProp = requireNotNull(config.propertyOrNull("app.base_path")) {
-        "Application base path must be set! Check environment variables"
-    }
-    return HopServiceConfiguration(
-        basePath = basePathProp.getString()
-    )
-}
-
-internal suspend fun createGlideClient(valkeyConfig: ValkeyConfiguration): Result<GlideClient> {
+private suspend fun createGlideClient(valkeyConfig: ValkeyConfiguration): Result<GlideClient> {
     val config = GlideClientConfiguration.builder()
         .address(
             NodeAddress.builder()
@@ -80,24 +72,38 @@ internal suspend fun createGlideClient(valkeyConfig: ValkeyConfiguration): Resul
     }
 }
 
+private fun DependencyRegistry.provideGlideClient(valkeyConfig: ValkeyConfiguration) {
+    provide<GlideClient?> {
+        createGlideClient(valkeyConfig)
+            .onSuccess { LOG.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}") }
+            .onFailure { LOG.warn("Could not start Glide Client!") }
+            .getOrNull()
+    } cleanup { it?.close() }
+}
+
+//===
+
+data class HopServiceConfiguration(
+    val basePath: String
+)
+
+fun ApplicationEnvironment.configuration(): HopServiceConfiguration {
+    val basePathProp = requireNotNull(config.propertyOrNull("app.base_path")) {
+        "Application base path must be set! Check environment variables"
+    }
+    return HopServiceConfiguration(
+        basePath = basePathProp.getString()
+    )
+}
+
 fun Application.configureFrameworks() {
     val valkeyConfig = environment.valkeyConfiguration()
-    val valkeyConfigMessage = {
-        log.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}")
-    }
-    val valkeyError = { log.warn("Could not start Glide Client!") }
     val appConfig = environment.configuration()
 
     dependencies {
         provide<CreateHop> { CreateHopImpl() }
         provide<FindHopByKey> { FindHopByKeyImpl() }
         provide<HopServiceConfiguration> { appConfig }
-
-        provide<GlideClient?> {
-            createGlideClient(valkeyConfig)
-                .onSuccess { valkeyConfigMessage() }
-                .onFailure { valkeyError() }
-                .getOrNull()
-        } cleanup { it?.close() }
+        provideGlideClient(valkeyConfig)
     }
 }
