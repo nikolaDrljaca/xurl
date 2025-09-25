@@ -39,18 +39,32 @@ data class HopDto(
 )
 
 fun Application.configureHopRoutes() = routing {
+    /*
+    NOTE: Since these are accessed here, they are created immediately on app startup
+    and are essentially singletons
+     */
     val findHop: FindHopByKey by dependencies
     val createHop: CreateHop by dependencies
     val config: HopServiceConfiguration by dependencies
 
     post("/") {
-        val cache: GlideClient? = dependencies.resolve()
-        // parse payload
+        // parse payload and create hop
         val payload = call.receive<CreateHopPayload>()
         log.info("createHop called with $payload.")
-
         val hop = createHop.execute(payload.url)
-        cache?.set(hop.key, hop.url)?.await()?.also { log.info("Stored ${hop.url} in cache.") }
+
+        // cache created hop
+        // NOTE: since it is accessed here, it will suspend until a client is created
+        val cache: GlideClient? = dependencies.resolve()
+        when {
+            cache != null -> {
+                cache.set(hop.key, hop.url)
+                    .await()
+                log.info("Stored ${hop.url} in cache.")
+            }
+            else -> Unit
+        }
+
         // prepare response
         val response = HopDto(
             id = hop.id.toString(),
@@ -64,13 +78,20 @@ fun Application.configureHopRoutes() = routing {
 
 
     get("/{hop_key}") {
-        val cache: GlideClient? = dependencies.resolve()
-        val key = call.pathParameters["hop_key"]
-        requireNotNull(key)
+        val key = requireNotNull(call.pathParameters["hop_key"])
         log.info("findHop called with $key.")
 
-        val hop = cache?.get(key)?.await().also { if (it != null) { log.info("Cache hit for $it.") } }
-            ?: findHop.execute(key)?.url
+        val cache: GlideClient? = dependencies.resolve()
+
+        val hop = when {
+            cache != null -> {
+                val stored = cache.get(key)?.await()
+                if (stored != null) { log.info("Cache hit for $stored.")}
+                stored
+            }
+
+            else -> findHop.execute(key)?.url
+        }
 
         when {
             hop != null -> call.respondRedirect(url = hop, permanent = false)
