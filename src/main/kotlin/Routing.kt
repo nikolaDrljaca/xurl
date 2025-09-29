@@ -8,6 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
 
@@ -54,15 +55,19 @@ fun Application.configureHopRoutes() = routing {
         val hop = createHop.execute(payload.url)
 
         // cache created hop
-        // NOTE: since it is accessed here, it will suspend until a client is created
-        val cache: GlideClient? = dependencies.resolve()
-        when {
-            cache != null -> {
-                cache.set(hop.key, hop.url)
-                    .await()
-                log.info("Stored ${hop.url} in cache.")
+        // NOTE: store in cache inside new coroutine so the method responds
+        // immediately
+        launch {
+            // NOTE: since it is accessed here, it will suspend until a client is created
+            val cache: GlideClient? = dependencies.resolve()
+            when {
+                cache != null -> {
+                    cache.set(hop.key, hop.url)
+                        .await()
+                    log.info("Stored ${hop.url} in cache.")
+                }
+                else -> Unit
             }
-            else -> Unit
         }
 
         // prepare response
