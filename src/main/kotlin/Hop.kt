@@ -1,19 +1,18 @@
 package com.drbrosdev
 
 import io.ktor.http.*
-import io.ktor.util.logging.*
-import kotlinx.coroutines.Dispatchers
 import org.apache.commons.lang3.RandomStringUtils
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-object HopTable: Table() {
+// DATA
+
+object HopTable : Table() {
     val id = uuid("id")
         .autoGenerate()
 
@@ -37,14 +36,14 @@ data class Hop(
     val createdAt: LocalDate
 )
 
-fun interface CreateHop {
+// Use Cases
+
+fun interface CreateHop: DatabaseScope {
     suspend fun execute(url: String): Hop
 }
 
-private val LOG = KtorSimpleLogger("HopLogger")
-
-class CreateHopImpl: CreateHop {
-    override suspend fun execute(url: String): Hop = query {
+class CreateHopImpl : CreateHop {
+    override suspend fun execute(url: String): Hop = tx {
         // verify url is valid -> move to a domain model and smart constructor
         requireNotNull(parseUrl(url)) { "$url is not a valid URL." }
         // create new key and insert
@@ -91,12 +90,12 @@ class CreateHopImpl: CreateHop {
     }
 }
 
-fun interface FindHopByKey {
+fun interface FindHopByKey: DatabaseScope {
     suspend fun execute(key: String): Hop?
 }
 
-class FindHopByKeyImpl: FindHopByKey {
-    override suspend fun execute(key: String): Hop? = query {
+class FindHopByKeyImpl : FindHopByKey {
+    override suspend fun execute(key: String): Hop? = tx {
         HopTable.selectAll()
             .where { HopTable.hopKey eq key }
             .map { it.asHop() }
@@ -110,6 +109,3 @@ class FindHopByKeyImpl: FindHopByKey {
         createdAt = LocalDate.parse(this[HopTable.createdAt])
     )
 }
-
-internal suspend fun <T> query(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO) { block() }

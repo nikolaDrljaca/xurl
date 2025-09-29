@@ -7,12 +7,18 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.ktor.util.logging.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.TransactionManager
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Connection
+
+val LOG = KtorSimpleLogger("HopService")
+
+// DATABASE
 
 fun Application.configureDatabase() {
     val path = environment.config.propertyOrNull("database.url")?.getString()
@@ -31,9 +37,16 @@ fun Application.configureDatabase() {
     }
 }
 
-// DI
+/*
+NOTE: Marker interface to 'hide' public dangling transaction method
+so it's not used everywhere
+ */
+interface DatabaseScope
 
-private val LOG = KtorSimpleLogger("DIContainer")
+suspend fun <T> DatabaseScope.tx(block: suspend () -> T): T =
+    newSuspendedTransaction(Dispatchers.IO) { block() }
+
+// DI
 
 data class ValkeyConfiguration(
     val host: String,
@@ -89,7 +102,7 @@ data class HopServiceConfiguration(
 
 fun ApplicationEnvironment.configuration(): HopServiceConfiguration {
     val basePathProp = requireNotNull(config.propertyOrNull("app.base_path")) {
-        "Application base path must be set! Check environment variables"
+        "Application base path must be set! Check environment variables."
     }
     return HopServiceConfiguration(
         basePath = basePathProp.getString()

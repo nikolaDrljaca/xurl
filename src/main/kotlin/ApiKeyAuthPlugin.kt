@@ -24,11 +24,11 @@ val ApiKeyAuthPlugin = createApplicationPlugin(
     createConfiguration = ::ApiKeyAuthPluginConfiguration
 ) {
     val apiKey = environment.apiKey()
-    application.log.info("Initializing ApiKey plugin with $apiKey.")
+    application.log.info("Initializing ApiKeyAuth plugin with key:$apiKey.")
 
     onCall { call ->
         val incoming = call.request.headers[HopHeaders.API_KEY]
-        // Path here does not contain query parameters!
+        //NOTE: Path here does not contain query parameters!
         val url = call.request.path()
 
         if (url in pluginConfig.protectedPaths) {
