@@ -1,25 +1,6 @@
 # xurl
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
-
-Here are some useful links to get you started:
-
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
-
-## Features
-
-Here's a list of features included in this project:
-
-| Name                                                                   | Description                                                                        |
-| ------------------------------------------------------------------------|------------------------------------------------------------------------------------ |
-| [Dependency Injection](https://start.ktor.io/p/ktor-di)                | Enables dependency injection for your server                                       |
-| [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
-| [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [Exposed](https://start.ktor.io/p/exposed)                             | Adds Exposed database to your application                                          |
-| [CORS](https://start.ktor.io/p/cors)                                   | Enables Cross-Origin Resource Sharing (CORS)                                       |
+URL Shortening service.
 
 ## Building & Running
 
@@ -44,12 +25,12 @@ If the server starts successfully, you'll see the following output:
 
 ## Design
 
-Main points to consider:
+Main points for consideration:
 
 1. Gather Requirements
 2. API Design / Database Design
 3. High-Level system design
-4. Deep dive
+4. Deep dive / Relevant details
 
 ### Requirements
 
@@ -60,13 +41,15 @@ Functional Requirements (domain sourcing):
 4. Custom links instead of randomly generated characters
 
 Non-functional requirements (technical):
-1. Minimize redirect latency—consider 301/302 status codes for cashing. This can interfere with analytics
-2. How many URLs should the system support? Example 1B
-→ We want 7 characters for keys, gives ~ 8b combinations (for 26 ascii characters)
-3. High-Read Low-Write service
-4. URL shortening strategy, how are keys created?
+* Minimize redirect latency—consider 301/302 status codes for cashing. This can interfere with analytics
+* How many URLs should the system support?
+  * Example 1B
+  * We want 7 characters for keys, gives ~ 8b combinations (for 26 ascii characters)
+* High-Read Low-Write service
+* URL shortening strategy, how are keys created?
+  * Explained in more detail below
 
-### API / Database Design
+### API Design
 
 For the API design, there are two main endpoints:
 1. One to create new short links—which is protected via an API key
@@ -146,6 +129,8 @@ components:
       name: X-Api-Key
 ```
 
+### Database Design
+
 For the database schema, it is really simple for the initial set of requirements.
 A single lookup table is enough to store this information.
 
@@ -159,6 +144,8 @@ erDiagram
     }
 ```
 
+An index is created for `hop_key` to increase lookup speeds.
+
 ### System Design
 
 Characteristics:
@@ -166,9 +153,10 @@ Characteristics:
 * Given the database structure, we store:
   * 70 bytes at least per record, for 1b records that's ~70GB (minimum)
   * 36 (id) + 7 (key) + 19 (time) + ~8(db) + x(url)
-* This is a high-read, low-write service, so should be optimized for reading
+* This is a high-read, low-write service -> should be optimized for reading.
 
-Key creation strategy:
+#### Key creation strategies
+
 * Use an incrementing counter and base62 encoding
   * This assumes the base62 alphabet is used for keys.
   * Each key creation the counter is incremented and that value is encoded with base62 resulting in the key.
@@ -176,7 +164,7 @@ Key creation strategy:
   * If the service holds this counter in-memory, increasing the number of instances will create issues and collisions
   since each instance will start with a new counter (assuming it starts from 0).
   * To solve this Redis (or any other in-memory single threaded cache) can be used.
-* Use a randomly generated string - **our pick**
+* (**Our pick**) Use a randomly generated string
     * Define an alphabet and use seeds or secure-random algorithms to generate keys.
     * Instances are stateless.
     * Small chances of collisions can be handled with retries.
@@ -186,7 +174,7 @@ Key creation strategy:
   * Instances are stateless
   * Collision handling is more complex since you have to keep track of how many times the URL was hashed
 
-Suggested designs:
+#### Suggested designs
 
 ```mermaid
 architecture-beta
@@ -202,9 +190,9 @@ architecture-beta
     xurl:R -- L:db 
 ```
 
-* To optimize for high-read, an in memory cache is used. 
-* The overall design is straightforward and has low cognitive load.
-* Low fault tolerance, if the service is down everything is unavailable.
+* The overall design is straightforward and has a low cognitive load.
+* To optimize for high-read, an in-memory cache is used. 
+* Low fault tolerance, if the service is down, everything is unavailable.
 
 ---
 
