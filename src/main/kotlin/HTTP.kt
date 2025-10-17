@@ -16,6 +16,6 @@ fun Application.configureHTTP() {
         allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HopHeaders.API_KEY)
-        anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
+        anyHost() // TODO: Don't do this in production if possible. Try to limit it.
     }
 }
