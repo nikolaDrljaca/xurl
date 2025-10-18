@@ -33,7 +33,7 @@ fun Application.configureDatabase() {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     // configure schemas
     transaction(database) {
-        SchemaUtils.create(HopTable)
+        SchemaUtils.create(ShortUrlTable)
     }
 }
 
@@ -96,15 +96,15 @@ private fun DependencyRegistry.provideGlideClient(valkeyConfig: ValkeyConfigurat
 
 //===
 
-data class HopServiceConfiguration(
+data class ShortUrlServiceConfiguration(
     val basePath: String
 )
 
-fun ApplicationEnvironment.configuration(): HopServiceConfiguration {
+fun ApplicationEnvironment.configuration(): ShortUrlServiceConfiguration {
     val basePathProp = requireNotNull(config.propertyOrNull("app.base_path")) {
         "Application base path must be set! Check environment variables."
     }
-    return HopServiceConfiguration(
+    return ShortUrlServiceConfiguration(
         basePath = basePathProp.getString()
     )
 }
@@ -114,9 +114,9 @@ fun Application.configureFrameworks() {
     val appConfig = environment.configuration()
 
     dependencies {
-        provide<CreateHop> { CreateHopImpl() }
-        provide<FindHopByKey> { FindHopByKeyImpl() }
-        provide<HopServiceConfiguration> { appConfig }
+        provide<CreateShortUrl> { CreateShortUrlImpl() }
+        provide<FindShortUrlByKey> { FindShortUrlByKeyImpl() }
+        provide<ShortUrlServiceConfiguration> { appConfig }
         provideGlideClient(valkeyConfig)
     }
 }

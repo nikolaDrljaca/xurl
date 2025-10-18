@@ -12,12 +12,12 @@ import java.util.*
 
 // DATA
 
-object HopTable : Table() {
+object ShortUrlTable : Table() {
     val id = uuid("id")
         .autoGenerate()
 
-    val hopKey = text("hop_key")
-        .uniqueIndex("hop_key_index")
+    val key = text("key")
+        .uniqueIndex("key_index")
 
     val longUrl = text("long_url")
 
@@ -29,7 +29,7 @@ object HopTable : Table() {
 
 // Domain
 
-data class Hop(
+data class ShortUrl(
     val id: UUID,
     val key: String,
     val url: String,
@@ -38,27 +38,27 @@ data class Hop(
 
 // Use Cases
 
-fun interface CreateHop: DatabaseScope {
-    suspend fun execute(url: String): Hop
+fun interface CreateShortUrl: DatabaseScope {
+    suspend fun execute(url: String): ShortUrl
 }
 
-class CreateHopImpl : CreateHop {
-    override suspend fun execute(url: String): Hop = tx {
+class CreateShortUrlImpl : CreateShortUrl {
+    override suspend fun execute(url: String): ShortUrl = tx {
         // verify url is valid -> move to a domain model and smart constructor
         requireNotNull(parseUrl(url)) { "$url is not a valid URL." }
         // create new key and insert
         val row = retry {
-            HopTable.insert {
-                it[HopTable.hopKey] = createKey()
-                it[HopTable.longUrl] = url
+            ShortUrlTable.insert {
+                it[ShortUrlTable.key] = createKey()
+                it[ShortUrlTable.longUrl] = url
             }
         }
         requireNotNull(row) { "Unable to generate unique hop key!" }
-        Hop(
-            id = row[HopTable.id],
-            key = row[HopTable.hopKey],
-            url = row[HopTable.longUrl],
-            createdAt = LocalDate.parse(row[HopTable.createdAt])
+        ShortUrl(
+            id = row[ShortUrlTable.id],
+            key = row[ShortUrlTable.key],
+            url = row[ShortUrlTable.longUrl],
+            createdAt = LocalDate.parse(row[ShortUrlTable.createdAt])
         ).also {
             LOG.info("Generated ${it.key} for ${it.url}.")
         }
@@ -90,22 +90,22 @@ class CreateHopImpl : CreateHop {
     }
 }
 
-fun interface FindHopByKey: DatabaseScope {
-    suspend fun execute(key: String): Hop?
+fun interface FindShortUrlByKey: DatabaseScope {
+    suspend fun execute(key: String): ShortUrl?
 }
 
-class FindHopByKeyImpl : FindHopByKey {
-    override suspend fun execute(key: String): Hop? = tx {
-        HopTable.selectAll()
-            .where { HopTable.hopKey eq key }
+class FindShortUrlByKeyImpl : FindShortUrlByKey {
+    override suspend fun execute(key: String): ShortUrl? = tx {
+        ShortUrlTable.selectAll()
+            .where { ShortUrlTable.key eq key }
             .map { it.asHop() }
             .singleOrNull()
     }
 
-    private fun ResultRow.asHop() = Hop(
-        id = this[HopTable.id],
-        key = this[HopTable.hopKey],
-        url = this[HopTable.longUrl],
-        createdAt = LocalDate.parse(this[HopTable.createdAt])
+    private fun ResultRow.asHop() = ShortUrl(
+        id = this[ShortUrlTable.id],
+        key = this[ShortUrlTable.key],
+        url = this[ShortUrlTable.longUrl],
+        createdAt = LocalDate.parse(this[ShortUrlTable.createdAt])
     )
 }

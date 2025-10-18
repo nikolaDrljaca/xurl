@@ -26,12 +26,12 @@ fun Application.configureRouting() {
 // ===
 
 @Serializable
-data class CreateHopPayload(
+data class CreateShortUrlPayload(
     val url: String
 )
 
 @Serializable
-data class HopDto(
+data class ShortUrlDto(
     val id: String,
     val key: String,
     val url: String,
@@ -39,20 +39,20 @@ data class HopDto(
     val createdAt: String
 )
 
-fun Application.configureHopRoutes() = routing {
+fun Application.configureShortUrlRoutes() = routing {
     /*
     NOTE: Since these are accessed here, they are created immediately on app startup
     and are essentially singletons
      */
-    val findHop: FindHopByKey by dependencies
-    val createHop: CreateHop by dependencies
-    val config: HopServiceConfiguration by dependencies
+    val findHop: FindShortUrlByKey by dependencies
+    val createShortUrl: CreateShortUrl by dependencies
+    val config: ShortUrlServiceConfiguration by dependencies
 
     post("/") {
         // parse payload and create hop
-        val payload = call.receive<CreateHopPayload>()
+        val payload = call.receive<CreateShortUrlPayload>()
         log.info("createHop called with $payload.")
-        val hop = createHop.execute(payload.url)
+        val hop = createShortUrl.execute(payload.url)
 
         // cache created hop
         // NOTE: store in cache inside new coroutine so the method responds
@@ -71,7 +71,7 @@ fun Application.configureHopRoutes() = routing {
         }
 
         // prepare response
-        val response = HopDto(
+        val response = ShortUrlDto(
             id = hop.id.toString(),
             key = hop.key,
             url = hop.url,

@@ -1,4 +1,4 @@
-# xurl
+# Yurl
 
 URL Shortening service.
 
@@ -58,13 +58,13 @@ For the API design, there are two main endpoints:
 ```yaml
 openapi: 3.0.3
 info:
-  title: Hops API
+  title: Y-URL API
   version: 1.0.0
 
 paths:
   /:
     post:
-      summary: Create a new hop
+      summary: Create a new short URL
       security:
         - ApiKeyAuth: []   # Require X-Api-Key for this endpoint
       requestBody:
@@ -81,7 +81,7 @@ paths:
                   example: some-slug
       responses:
         "201":
-          description: Hop successfully created
+          description: Short URL successfully created
           content:
             application/json:
               schema:
@@ -95,14 +95,14 @@ paths:
 
   /{key}:
     get:
-      summary: Retrieve a hop and redirect
+      summary: Retrieve a short URL and redirect
       parameters:
         - in: path
           name: key
           required: true
           schema:
             type: string
-          description: Unique identifier for the hop
+          description: Unique identifier for the short URL
       responses:
         "301":
           description: Moved Permanently
@@ -136,20 +136,20 @@ A single lookup table is enough to store this information.
 
 ```mermaid
 erDiagram 
-    HOP {
+    short_url {
         uuid id
-        text hop_key
+        text key
         text long_url
         timestamp created_at
     }
 ```
 
-An index is created for `hop_key` to increase lookup speeds.
+An index is created for `key` to increase lookup speeds.
 
 ### System Design
 
 Characteristics:
-* A hop key is 7 alphabetic characters, gives pool of 8b mappings.
+* A key is 7 alphabetic characters, gives pool of 8b mappings.
 * Given the database structure, we store:
   * 70 bytes at least per record, for 1b records that's ~70GB (minimum)
   * 36 (id) + 7 (key) + 19 (time) + ~8(db) + x(url)
@@ -178,16 +178,16 @@ Characteristics:
 
 ```mermaid
 architecture-beta
-    group api(cloud)[XURL]
+    group api(cloud)[YURL]
 
     service client(internet)[Client]
-    service xurl(server)[Service] in api
+    service yurl(server)[Service] in api
     service cache(database)[Cache] in api
     service db(database)[Database] in api
 
-    client:R -- L:xurl
-    xurl:T -- B:cache
-    xurl:R -- L:db 
+    client:R -- L:yurl
+    yurl:T -- B:cache
+    yurl:R -- L:db 
 ```
 
 * The overall design is straightforward and has a low cognitive load.
@@ -198,7 +198,7 @@ architecture-beta
 
 ```mermaid
 architecture-beta
-    group api(cloud)[XURL]
+    group api(cloud)[yurl]
 
     service client(internet)[Client]
     service gw(server)[Gateway] in api
@@ -240,7 +240,7 @@ This design introduces:
 * High cognitive load, high deployment complexity
 
 How it works:
-* A message queue is used to hand off write messages. The service generates a hop key, hands off the message
+* A message queue is used to hand off write messages. The service generates a key, hands off the message
 to the queue and returns, greatly increasing response times.
 * A service sits in between the queue and the database. It consumes each message, one by one in order, processes
 and stores them into the cache and the database achieving consistency.

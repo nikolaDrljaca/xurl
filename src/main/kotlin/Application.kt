@@ -13,5 +13,5 @@ fun Application.module() {
     configureSerialization()
     configureHTTP()
     configureRouting()
-    configureHopRoutes()
+    configureShortUrlRoutes()
 }
