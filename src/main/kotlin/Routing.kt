@@ -146,19 +146,24 @@ fun Application.configureClientRoutes() = routing {
             }
 
             body(
-                classes = "bg-slate-900 h-screen w-screen"
+                classes = "h-screen w-screen"
             ) {
                 mainLayout {
                     p(classes = "text-2xl text-center") { +"Yet Another URL Shortener" }
                     postForm(
                         encType = FormEncType.textPlain,
-                        action = "/create-hop",
+                        action = "/create-url",
                         classes = "flex flex-col items-center w-full space-y-12"
                     ) {
                         input(
                             type = InputType.url,
-                            classes = "text-4xl text-center w-full focus:ring-0"
-                        ) {  }
+                            classes = "text-4xl text-center w-full focus:outline-hidden w-full"
+                        ) {
+                            required = true
+                            name = "url"
+                            id = "url"
+                            placeholder = "Your URL here."
+                        }
 
                         hopButton { +"Go" }
                     }
@@ -202,8 +207,8 @@ inline fun FlowContent.mainLayout(
     crossinline block: FlowContent.() -> Unit
 ) {
     div(classes = "relative w-screen min-h-screen bg-slate-900") {
-        div(classes = "flex flex-col items-center justify-content h-screen") {
-            div(classes = "rounded-xl text-white p-10 text-sm/7 flex flex-col items-center w-full space-y-12") {
+        div(classes = "flex w-screen h-screen items-center justify-center") {
+            div(classes = "text-white p-10 flex flex-col items-center space-y-12 w-full") {
                 block()
             }
         }
