@@ -37,13 +37,8 @@ fun Application.configureDatabase() {
     }
 }
 
-/*
-NOTE: Marker interface to 'hide' public dangling transaction method
-so it's not used everywhere
- */
-interface DatabaseScope
 
-suspend fun <T> DatabaseScope.tx(block: suspend () -> T): T =
+suspend fun <T> transaction(block: suspend () -> T): T =
     newSuspendedTransaction(Dispatchers.IO) { block() }
 
 // DI

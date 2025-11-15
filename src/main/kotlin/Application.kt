@@ -3,10 +3,10 @@ package com.drbrosdev
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
-//    io.ktor.server.netty.EngineMain.main(args)
+    io.ktor.server.netty.EngineMain.main(args)
 }
 
-fun Application.module() {
+suspend fun Application.module() {
     configureSecurity()
     configureDatabase()
     configureFrameworks()

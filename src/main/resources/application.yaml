@@ -4,8 +4,6 @@ ktor:
             - com.drbrosdev.ApplicationKt.module
     deployment:
         port: 5000
-        watch:
-            - classes
     development: true
 
 database:

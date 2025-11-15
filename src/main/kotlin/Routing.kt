@@ -149,7 +149,7 @@ fun Application.configureClientRoutes() = routing {
                 classes = "h-screen w-screen"
             ) {
                 mainLayout {
-                    p(classes = "text-2xl text-center") { +"Yet Another URL Shortener" }
+                    p(classes = "text-2xl text-center") { +"Yet Another URL Shortener v2" }
                     postForm(
                         encType = FormEncType.textPlain,
                         action = "/create-url",
