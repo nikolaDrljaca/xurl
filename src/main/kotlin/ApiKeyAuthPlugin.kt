@@ -45,9 +45,9 @@ fun Application.configureSecurity() {
     val apiKey = requireNotNull(environment.config.propertyOrNull("security.api_key"))
         .getString()
 
-    install(ApiKeyAuthPlugin) {
-        withKey(apiKey)
-        protect("/")
-    }
+//    install(ApiKeyAuthPlugin) {
+//        withKey(apiKey)
+//        protect("/l")
+//    }
 }
 
