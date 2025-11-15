@@ -42,6 +42,7 @@ data class ShortUrlDto(
     val createdAt: String
 )
 
+// TODO: Move?
 suspend fun createHopRouteHandler(
     url: String,
     fullPath: String,
@@ -84,6 +85,9 @@ fun Application.configureShortUrlRoutes() = routing {
     post("/create-url") {
         val payload = call.receiveText()
         log.info("create-url received $payload")
+        // NOTE: content is
+        // name1=value1
+        // name2=value2
         val url = payload.split("=").last()
         val response = createHopRouteHandler(
             url = url,
@@ -137,19 +141,27 @@ fun Application.configureShortUrlRoutes() = routing {
     }
 }
 
+fun HTML.headContent(
+    pageTitle: String = "",
+    block: HEAD.() -> Unit = {}
+) {
+    head {
+        title { +pageTitle }
+        script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
+        block()
+    }
+}
+
 fun Application.configureClientRoutes() = routing {
     get("/") {
         call.respondHtml {
-            head {
-                title { +"Another URL Shortener" }
-                script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
-            }
+            headContent(pageTitle = "Another URL Shortener") {}
 
             body(
                 classes = "h-screen w-screen"
             ) {
                 mainLayout {
-                    p(classes = "text-2xl text-center") { +"Yet Another URL Shortener v2" }
+                    p(classes = "text-2xl text-center") { +"Yet Another URL Shortener" }
                     postForm(
                         encType = FormEncType.textPlain,
                         action = "/create-url",
@@ -193,14 +205,24 @@ inline fun FlowContent.hopButton(
 fun HTML.shortUrlCreatedPage(
     createdUrl: String,
 ) {
-    head {
-        title { +"Success!" }
-        script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
-    }
+    headContent(pageTitle = "Success!")
 
-    body {
-        h1(classes = "text-3xl font-bold underline") { +"Your short URL is: $createdUrl" }
+    body(classes = "w-screen h-screen") {
+        mainLayout {
+            h1(classes = "text-3xl") { +"Your short URL is" }
+            a(
+                href = createdUrl,
+                target = null,
+                classes = "text-3xl font-bold hover:underline visited:text-purple-600"
+            ) {
+                +createdUrl
+            }
+        }
     }
+}
+
+fun HTML.hopFooter() {
+    // TODO 
 }
 
 inline fun FlowContent.mainLayout(
