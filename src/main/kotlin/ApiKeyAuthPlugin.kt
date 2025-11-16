@@ -5,6 +5,12 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 
+/*
+NOTE: Not used anymore.
+
+Left here as an example of how to make a custom plugin and
+how to protect a pure JSON web service.
+ */
 class ApiKeyAuthPluginConfiguration {
     private val _protectedPaths = mutableSetOf<String>()
     val protectedPaths: Set<String> = _protectedPaths
@@ -45,9 +51,9 @@ fun Application.configureSecurity() {
     val apiKey = requireNotNull(environment.config.propertyOrNull("security.api_key"))
         .getString()
 
-//    install(ApiKeyAuthPlugin) {
-//        withKey(apiKey)
-//        protect("/l")
-//    }
+    install(ApiKeyAuthPlugin) {
+        withKey(apiKey)
+        protect("/l")
+    }
 }
 

@@ -13,8 +13,9 @@ valkey:
     host: "$VALKEY_HOST:localhost"
     port: "$VALKEY_PORT:6379"
 
-security:
-    api_key: "$API_KEY:ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
+# NOTE: no longer used, commented left as example
+#security:
+#    api_key: "$API_KEY:ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
 
 app:
     base_path: "$BASE_PATH:http://localhost:5000"

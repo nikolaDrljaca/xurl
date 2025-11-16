@@ -13,8 +13,9 @@ services:
       DB_URL: "jdbc:sqlite:/data/db.sqlite"
       VALKEY_HOST: "hop-cache"
       VALKEY_PORT: "6379"
+      # NOTE: No longer used, comment left as example
+      # API_KEY: ${API_KEY}
       # NOTE: Will be added on Coolify as env variable
-      API_KEY: ${API_KEY}
       BASE_PATH: ${BASE_PATH}
     depends_on:
       hop-cache:

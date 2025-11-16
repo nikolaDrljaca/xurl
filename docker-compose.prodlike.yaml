@@ -11,7 +11,8 @@ services:
       - "./app-data:/data"
     environment:
       DB_URL: "jdbc:sqlite:/data/yurl-db.sqlite"
-      API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
+      # NOTE: No longer used, comment left as example
+      #API_KEY: "ed5b50b4-a8ef-43d6-8622-9f67f35700e5"
       VALKEY_HOST: "yurl-cache"
       VALKEY_PORT: "6379"
       BASE_PATH: "http://localhost:5000"

@@ -98,7 +98,7 @@ fun Application.configureShortUrlRoutes() = routing {
         }
     }
 
-    post("/") {
+    post("/l") {
         // parse payload and create hop
         val payload = call.receive<CreateShortUrlPayload>()
         log.info("createHop called with $payload.")
@@ -112,8 +112,7 @@ fun Application.configureShortUrlRoutes() = routing {
         call.respond(HttpStatusCode.Created, response)
     }
 
-
-    get("/{hop_key}") {
+    get("/l/{hop_key}") {
         val key = requireNotNull(call.pathParameters["hop_key"])
         log.info("findHop called with $key.")
 
