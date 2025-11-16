@@ -4,14 +4,13 @@ import glide.api.GlideClient
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
+import io.ktor.server.http.content.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import kotlinx.html.*
 import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
 
@@ -52,16 +51,12 @@ suspend fun createHopRouteHandler(
     // create url
     val hop = createShortUrl.execute(url)
     // cache created hop
-    // NOTE: store in cache inside new coroutine so the method responds
-    // immediately
-    launch {
-        // NOTE: since it is accessed here, it will suspend until a client is created
-        val cache: GlideClient? = cacheAccessor()
-        when {
-            cache != null -> cache.set(hop.key, hop.url).await()
+    // NOTE: since it is accessed here, it will suspend until a client is created
+    val cache: GlideClient? = cacheAccessor()
+    when {
+        cache != null -> cache.set(hop.key, hop.url).await()
 
-            else -> Unit
-        }
+        else -> Unit
     }
     // prepare response
     ShortUrlDto(
@@ -96,7 +91,10 @@ fun Application.configureShortUrlRoutes() = routing {
             cacheAccessor = { dependencies.resolve() }
         )
         call.respondHtml {
-            shortUrlCreatedPage(response.fullUrl)
+            shortUrlCreatedPage(
+                basePath = config.basePath,
+                createdUrl = response.fullUrl
+            )
         }
     }
 
@@ -141,98 +139,14 @@ fun Application.configureShortUrlRoutes() = routing {
     }
 }
 
-fun HTML.headContent(
-    pageTitle: String = "",
-    block: HEAD.() -> Unit = {}
-) {
-    head {
-        title { +pageTitle }
-        script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
-        block()
-    }
-}
+fun Application.configureViewRoutes() = routing {
+    val config: ShortUrlServiceConfiguration by dependencies
+    // static assets
+    staticResources("/public", "public")
 
-fun Application.configureClientRoutes() = routing {
     get("/") {
         call.respondHtml {
-            headContent(pageTitle = "Another URL Shortener") {}
-
-            body(
-                classes = "h-screen w-screen"
-            ) {
-                mainLayout {
-                    p(classes = "text-2xl text-center") { +"Yet Another URL Shortener" }
-                    postForm(
-                        encType = FormEncType.textPlain,
-                        action = "/create-url",
-                        classes = "flex flex-col items-center w-full space-y-12"
-                    ) {
-                        input(
-                            type = InputType.url,
-                            classes = "text-4xl text-center w-full focus:outline-hidden w-full"
-                        ) {
-                            required = true
-                            name = "url"
-                            id = "url"
-                            placeholder = "Your URL here."
-                        }
-
-                        hopButton { +"Go" }
-                    }
-                }
-            }
-        }
-    }
-}
-
-inline fun FlowContent.hopButton(
-    crossinline block: FlowContent.() -> Unit
-) {
-    button(
-        classes = """
-            text-white
-            bg-blue-500
-            box-border
-            border border-transparent 
-            hover:bg-blue-800 
-            focus:ring-2 focus:ring-blue-300 
-            shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none cursor-pointer w-xs
-        """.trimIndent(),
-        block = block
-    )
-}
-
-fun HTML.shortUrlCreatedPage(
-    createdUrl: String,
-) {
-    headContent(pageTitle = "Success!")
-
-    body(classes = "w-screen h-screen") {
-        mainLayout {
-            h1(classes = "text-3xl") { +"Your short URL is" }
-            a(
-                href = createdUrl,
-                target = null,
-                classes = "text-3xl font-bold hover:underline visited:text-purple-600"
-            ) {
-                +createdUrl
-            }
-        }
-    }
-}
-
-fun HTML.hopFooter() {
-    // TODO 
-}
-
-inline fun FlowContent.mainLayout(
-    crossinline block: FlowContent.() -> Unit
-) {
-    div(classes = "relative w-screen min-h-screen bg-slate-900") {
-        div(classes = "flex w-screen h-screen items-center justify-center") {
-            div(classes = "text-white p-10 flex flex-col items-center space-y-12 w-full") {
-                block()
-            }
+            createUrlPage(config.basePath)
         }
     }
 }

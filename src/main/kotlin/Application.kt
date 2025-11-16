@@ -6,7 +6,7 @@ fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
-suspend fun Application.module() {
+fun Application.module() {
     configureSecurity()
     configureDatabase()
     configureFrameworks()
@@ -14,5 +14,5 @@ suspend fun Application.module() {
     configureHTTP()
     configureRouting()
     configureShortUrlRoutes()
-    configureClientRoutes()
+    configureViewRoutes()
 }
