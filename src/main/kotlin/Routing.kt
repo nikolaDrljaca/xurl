@@ -5,6 +5,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.http.content.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -79,6 +80,7 @@ fun Application.configureShortUrlRoutes() = routing {
     post("/create-url") {
         val payload = call.receiveText()
         log.info("create-url received $payload")
+        log.info("create-url called with: remoteHost=${call.request.origin.remoteHost} and remoteAddress=${call.request.origin.remoteAddress}")
         // NOTE: content is
         // name1=value1
         // name2=value2
@@ -120,13 +122,7 @@ fun Application.configureShortUrlRoutes() = routing {
         val cache: GlideClient? = dependencies.resolve()
 
         val hop = when {
-            cache != null -> {
-                val stored = cache.get(key)?.await()
-                if (stored != null) {
-                    log.info("Cache hit for $stored.")
-                }
-                stored
-            }
+            cache != null -> cache.get(key)?.await()
 
             else -> findHop.execute(key)?.url
         }
