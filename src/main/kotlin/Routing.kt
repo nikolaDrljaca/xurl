@@ -138,7 +138,7 @@ fun Application.configureShortUrlRoutes() = routing {
 fun Application.configureViewRoutes() = routing {
     val config: ShortUrlServiceConfiguration by dependencies
     // static assets
-    staticResources("/public", "public")
+    staticResources("/", "public")
 
     get("/") {
         call.respondHtml {

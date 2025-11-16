@@ -95,20 +95,20 @@ private fun HTML.headContent(
     head {
         title { +pageTitle }
         meta(name = "description", content = "Yet another URL shortener.")
-        link(rel = "icon", href = "$basePath/public/favicon.ico", type = "image/x-icon")
+        link(rel = "icon", href = "/favicon.ico", type = "image/x-icon")
         link(rel = "canonical", href = basePath)
         script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
 
         // open-graph
         meta(property = "og:site_name", content = "Y URL")
         meta(property = "og:url", content = basePath)
-        meta(property = "og:image", content = "$basePath/public/logo.png")
+        meta(property = "og:image", content = "$basePath/logo.png")
         meta(property = "og:description", content = "Yet another URL shortener.")
         meta(property = "og:title", content = "Y URL")
         // twitter
         meta(name = "twitter:title", content = "Y URL")
         meta(name = "twitter:description", content = "Yet another URL shortener.")
-        meta(name = "twitter:image", content = "$basePath/public/logo.png")
+        meta(name = "twitter:image", content = "$basePath/logo.png")
 
         block()
     }
