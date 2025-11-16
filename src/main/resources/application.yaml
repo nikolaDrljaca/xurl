@@ -4,7 +4,6 @@ ktor:
             - com.drbrosdev.ApplicationKt.module
     deployment:
         port: 5000
-    development: true
 
 database:
     url: "$DB_URL:jdbc:sqlite:./app-data/yurl-db.sqlite"

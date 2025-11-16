@@ -41,7 +41,6 @@ data class ShortUrlDto(
     val createdAt: String
 )
 
-// TODO: Move?
 suspend fun createHopRouteHandler(
     url: String,
     fullPath: String,
@@ -64,7 +63,7 @@ suspend fun createHopRouteHandler(
         key = hop.key,
         url = hop.url,
         createdAt = hop.createdAt.format(DateTimeFormatter.ISO_DATE),
-        fullUrl = "$fullPath/${hop.key}"
+        fullUrl = "$fullPath/l/${hop.key}"
     )
 }
 
@@ -83,7 +82,9 @@ fun Application.configureShortUrlRoutes() = routing {
         // NOTE: content is
         // name1=value1
         // name2=value2
-        val url = payload.split("=").last()
+        val url = payload.split("=")
+            .last()
+            .trim()
         val response = createHopRouteHandler(
             url = url,
             fullPath = config.basePath,

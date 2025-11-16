@@ -5,10 +5,7 @@ import kotlinx.html.*
 fun HTML.createUrlPage(
     basePath: String,
 ) {
-    headContent(
-        basePath = basePath,
-        pageTitle = "Y URL"
-    )
+    headContent(pageTitle = "Y URL", basePath = basePath)
 
     body(
         classes = "h-screen w-screen font-mono"
@@ -58,18 +55,26 @@ fun HTML.shortUrlCreatedPage(
 
 // =====
 
-private fun HTML.hopFooter() {
-    // TODO
-}
+private fun FlowContent.hopFooter() =
+    footer(classes = "flex text-white p-5") {
+        a(
+            classes = "text-sm underline visited:text-purple-700",
+            href = "https://github.com/nikolaDrljaca/yurl"
+        ) {
+            +"View on GitHub"
+        }
+    }
 
 private inline fun FlowContent.mainLayout(
     crossinline block: FlowContent.() -> Unit
 ) {
-    div(classes = "relative w-screen min-h-screen bg-black") {
-        div(classes = "flex w-screen h-screen items-center justify-center") {
-            div(classes = "text-white p-10 flex flex-col items-center space-y-12 w-full") {
+    div(classes = "relative w-screen h-screen bg-black") {
+        div(classes = "flex flex-col w-screen h-screen items-center justify-between") {
+            div(classes = "text-white p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
                 block()
             }
+
+            hopFooter()
         }
     }
 }
