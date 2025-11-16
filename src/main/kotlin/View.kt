@@ -49,6 +49,14 @@ fun HTML.shortUrlCreatedPage(
             ) {
                 +createdUrl
             }
+
+            a(
+                href = basePath,
+                target = null,
+                classes = "$hopButtonClasses text-center"
+            ) {
+                +"Go again"
+            }
         }
     }
 }
@@ -70,7 +78,7 @@ private inline fun FlowContent.mainLayout(
 ) {
     div(classes = "relative w-screen h-screen bg-black") {
         div(classes = "flex flex-col w-screen h-screen items-center justify-between") {
-            div(classes = "text-white p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
+            div(classes = "text-white p-1 lg:p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
                 block()
             }
 
@@ -111,22 +119,24 @@ private fun FlowOrMetaDataOrPhrasingContent.meta(property: String, content: Stri
     this.content = content
 }
 
+private val hopButtonClasses = """
+    text-white
+    bg-transparent
+    box-border
+    border 
+    border-bg-white
+    transition
+    hover:bg-white
+    hover:text-black
+    focus:ring-2 focus:ring-white-300 
+    shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none cursor-pointer w-xs
+""".trimIndent()
+
 private inline fun FlowContent.hopButton(
     crossinline block: FlowContent.() -> Unit
 ) {
     button(
-        classes = """
-            text-white
-            bg-transparent
-            box-border
-            border 
-            border-bg-white
-            transition
-            hover:bg-white
-            hover:text-black
-            focus:ring-2 focus:ring-white-300 
-            shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none cursor-pointer w-xs
-        """.trimIndent(),
+        classes = hopButtonClasses,
         block = block
     )
 }
