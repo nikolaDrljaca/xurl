@@ -38,12 +38,12 @@ data class ShortUrl(
 
 // Use Cases
 
-fun interface CreateShortUrl: DatabaseScope {
+fun interface CreateShortUrl {
     suspend fun execute(url: String): ShortUrl
 }
 
 class CreateShortUrlImpl : CreateShortUrl {
-    override suspend fun execute(url: String): ShortUrl = tx {
+    override suspend fun execute(url: String): ShortUrl = transaction {
         // verify url is valid -> move to a domain model and smart constructor
         requireNotNull(parseUrl(url)) { "$url is not a valid URL." }
         // create new key and insert
@@ -90,12 +90,12 @@ class CreateShortUrlImpl : CreateShortUrl {
     }
 }
 
-fun interface FindShortUrlByKey: DatabaseScope {
+fun interface FindShortUrlByKey {
     suspend fun execute(key: String): ShortUrl?
 }
 
 class FindShortUrlByKeyImpl : FindShortUrlByKey {
-    override suspend fun execute(key: String): ShortUrl? = tx {
+    override suspend fun execute(key: String): ShortUrl? = transaction {
         ShortUrlTable.selectAll()
             .where { ShortUrlTable.key eq key }
             .map { it.asHop() }

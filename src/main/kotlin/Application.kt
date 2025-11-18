@@ -7,11 +7,12 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureSecurity()
+//    configureSecurity()
     configureDatabase()
     configureFrameworks()
     configureSerialization()
     configureHTTP()
     configureRouting()
     configureShortUrlRoutes()
+    configureViewRoutes()
 }

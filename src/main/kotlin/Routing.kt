@@ -3,12 +3,15 @@ package com.drbrosdev
 import glide.api.GlideClient
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.html.*
+import io.ktor.server.http.content.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
 
@@ -39,6 +42,32 @@ data class ShortUrlDto(
     val createdAt: String
 )
 
+suspend fun createHopRouteHandler(
+    url: String,
+    fullPath: String,
+    createShortUrl: CreateShortUrl,
+    cacheAccessor: suspend () -> GlideClient?
+): ShortUrlDto = coroutineScope {
+    // create url
+    val hop = createShortUrl.execute(url)
+    // cache created hop
+    // NOTE: since it is accessed here, it will suspend until a client is created
+    val cache: GlideClient? = cacheAccessor()
+    when {
+        cache != null -> cache.set(hop.key, hop.url).await()
+
+        else -> Unit
+    }
+    // prepare response
+    ShortUrlDto(
+        id = hop.id.toString(),
+        key = hop.key,
+        url = hop.url,
+        createdAt = hop.createdAt.format(DateTimeFormatter.ISO_DATE),
+        fullUrl = "$fullPath/l/${hop.key}"
+    )
+}
+
 fun Application.configureShortUrlRoutes() = routing {
     /*
     NOTE: Since these are accessed here, they are created immediately on app startup
@@ -48,52 +77,52 @@ fun Application.configureShortUrlRoutes() = routing {
     val createShortUrl: CreateShortUrl by dependencies
     val config: ShortUrlServiceConfiguration by dependencies
 
-    post("/") {
+    post("/create-url") {
+        val payload = call.receiveText()
+        log.info("create-url received $payload")
+        log.info("create-url called with: remoteHost=${call.request.origin.remoteHost} and remoteAddress=${call.request.origin.remoteAddress}")
+        // NOTE: content is
+        // name1=value1
+        // name2=value2
+        val url = payload.split("=")
+            .last()
+            .trim()
+        val response = createHopRouteHandler(
+            url = url,
+            fullPath = config.basePath,
+            createShortUrl = createShortUrl,
+            cacheAccessor = { dependencies.resolve() }
+        )
+        call.respondHtml {
+            shortUrlCreatedPage(
+                basePath = config.basePath,
+                createdUrl = response.fullUrl
+            )
+        }
+    }
+
+    post("/l") {
         // parse payload and create hop
         val payload = call.receive<CreateShortUrlPayload>()
         log.info("createHop called with $payload.")
-        val hop = createShortUrl.execute(payload.url)
-
-        // cache created hop
-        // NOTE: store in cache inside new coroutine so the method responds
-        // immediately
-        launch {
-            // NOTE: since it is accessed here, it will suspend until a client is created
-            val cache: GlideClient? = dependencies.resolve()
-            when {
-                cache != null -> {
-                    cache.set(hop.key, hop.url)
-                        .await()
-                    log.info("Stored ${hop.url} in cache.")
-                }
-                else -> Unit
-            }
-        }
-
         // prepare response
-        val response = ShortUrlDto(
-            id = hop.id.toString(),
-            key = hop.key,
-            url = hop.url,
-            createdAt = hop.createdAt.format(DateTimeFormatter.ISO_DATE),
-            fullUrl = "${config.basePath}/${hop.key}"
+        val response = createHopRouteHandler(
+            url = payload.url,
+            fullPath = config.basePath,
+            createShortUrl = createShortUrl,
+            cacheAccessor = { dependencies.resolve() }
         )
         call.respond(HttpStatusCode.Created, response)
     }
 
-
-    get("/{hop_key}") {
+    get("/l/{hop_key}") {
         val key = requireNotNull(call.pathParameters["hop_key"])
         log.info("findHop called with $key.")
 
         val cache: GlideClient? = dependencies.resolve()
 
         val hop = when {
-            cache != null -> {
-                val stored = cache.get(key)?.await()
-                if (stored != null) { log.info("Cache hit for $stored.")}
-                stored
-            }
+            cache != null -> cache.get(key)?.await()
 
             else -> findHop.execute(key)?.url
         }
@@ -102,6 +131,18 @@ fun Application.configureShortUrlRoutes() = routing {
             hop != null -> call.respondRedirect(url = hop, permanent = false)
 
             else -> call.respond(HttpStatusCode.NotFound)
+        }
+    }
+}
+
+fun Application.configureViewRoutes() = routing {
+    val config: ShortUrlServiceConfiguration by dependencies
+    // static assets
+    staticResources("/", "public")
+
+    get("/") {
+        call.respondHtml {
+            createUrlPage(config.basePath)
         }
     }
 }

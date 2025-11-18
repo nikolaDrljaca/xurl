@@ -37,13 +37,8 @@ fun Application.configureDatabase() {
     }
 }
 
-/*
-NOTE: Marker interface to 'hide' public dangling transaction method
-so it's not used everywhere
- */
-interface DatabaseScope
 
-suspend fun <T> DatabaseScope.tx(block: suspend () -> T): T =
+suspend fun <T> transaction(block: suspend () -> T): T =
     newSuspendedTransaction(Dispatchers.IO) { block() }
 
 // DI
@@ -85,15 +80,6 @@ private suspend fun createGlideClient(valkeyConfig: ValkeyConfiguration): Result
     }
 }
 
-private fun DependencyRegistry.provideGlideClient(valkeyConfig: ValkeyConfiguration) {
-    provide<GlideClient?> {
-        createGlideClient(valkeyConfig)
-            .onSuccess { LOG.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}") }
-            .onFailure { LOG.warn("Could not start Glide Client!") }
-            .getOrNull()
-    } cleanup { it?.close() }
-}
-
 //===
 
 data class ShortUrlServiceConfiguration(
@@ -117,6 +103,12 @@ fun Application.configureFrameworks() {
         provide<CreateShortUrl> { CreateShortUrlImpl() }
         provide<FindShortUrlByKey> { FindShortUrlByKeyImpl() }
         provide<ShortUrlServiceConfiguration> { appConfig }
-        provideGlideClient(valkeyConfig)
+
+        provide<GlideClient?> {
+            createGlideClient(valkeyConfig)
+                .onSuccess { LOG.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}") }
+                .onFailure { LOG.warn("Could not start Glide Client!") }
+                .getOrNull()
+        } cleanup { it?.close() }
     }
 }

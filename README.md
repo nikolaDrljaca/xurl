@@ -62,11 +62,9 @@ info:
   version: 1.0.0
 
 paths:
-  /:
+  /l:
     post:
       summary: Create a new short URL
-      security:
-        - ApiKeyAuth: []   # Require X-Api-Key for this endpoint
       requestBody:
         required: true
         content:
@@ -93,7 +91,7 @@ paths:
         "401":
           description: Unauthorized – missing or invalid API key
 
-  /{key}:
+  /l/{key}:
     get:
       summary: Retrieve a short URL and redirect
       parameters:
@@ -120,13 +118,6 @@ paths:
               schema:
                 type: string
                 format: uri
-
-components:
-  securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-Api-Key
 ```
 
 ### Database Design
