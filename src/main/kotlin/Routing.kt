@@ -84,9 +84,9 @@ fun Application.configureShortUrlRoutes() = routing {
         // NOTE: content is
         // name1=value1
         // name2=value2
-        val url = payload.split("=")
-            .last()
-            .trim()
+        val url = payload.split("=", limit = 2)
+            .drop(1) // drop the url= part
+            .joinToString { it.trim() } // take all the rest
         val response = createHopRouteHandler(
             url = url,
             fullPath = config.basePath,
