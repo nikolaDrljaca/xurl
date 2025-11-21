@@ -64,7 +64,7 @@ fun HTML.shortUrlCreatedPage(
 // =====
 
 private fun FlowContent.hopFooter() =
-    footer(classes = "flex text-white p-5") {
+    footer(classes = "flex text-onbrand p-5") {
         a(
             classes = "text-sm underline visited:text-purple-700",
             href = "https://github.com/nikolaDrljaca/yurl"
@@ -76,9 +76,9 @@ private fun FlowContent.hopFooter() =
 private inline fun FlowContent.mainLayout(
     crossinline block: FlowContent.() -> Unit
 ) {
-    div(classes = "relative w-screen h-screen bg-black") {
+    div(classes = "relative w-screen h-screen bg-brand") {
         div(classes = "flex flex-col w-screen h-screen items-center justify-between") {
-            div(classes = "text-white p-1 lg:p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
+            div(classes = "text-onbrand p-1 lg:p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
                 block()
             }
 
@@ -98,6 +98,19 @@ private fun HTML.headContent(
         link(rel = "icon", href = "/favicon.ico", type = "image/x-icon")
         link(rel = "canonical", href = basePath)
         script(src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4") { }
+
+        style(type = "text/tailwindcss") {
+            unsafe {
+                raw(
+                    """
+              @theme {
+                --color-brand: #222831;
+                --color-onbrand: #DFD0B8;
+              }
+                """
+                )
+            }
+        }
 
         // open-graph
         meta(property = "og:site_name", content = "Y URL")
@@ -120,14 +133,14 @@ private fun FlowOrMetaDataOrPhrasingContent.meta(property: String, content: Stri
 }
 
 private val hopButtonClasses = """
-    text-white
+    text-onbrand
     bg-transparent
     box-border
     border 
-    border-bg-white
+    border-bg-onbrand
     transition
-    hover:bg-white
-    hover:text-black
+    hover:bg-onbrand
+    hover:text-brand
     focus:ring-2 focus:ring-white-300 
     shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none cursor-pointer w-xs
 """.trimIndent()
