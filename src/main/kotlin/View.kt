@@ -7,29 +7,35 @@ fun HTML.createUrlPage(
 ) {
     headContent(pageTitle = "Y URL", basePath = basePath)
 
-    body(
-        classes = "h-screen w-screen font-mono"
-    ) {
+    yurlBody {
         mainLayout {
-            p(classes = "text-2xl text-center") { +"Yet Another URL Shortener" }
+            p(classes = "text-xl sm:text-2xl text-center") { +"Yet Another URL Shortener" }
             postForm(
                 encType = FormEncType.textPlain,
                 action = "/create-url",
-                classes = "flex flex-col items-center w-full space-y-12"
+                classes = "w-full max-w-xl flex flex-col items-center space-y-8"
             ) {
                 input(
                     type = InputType.url,
-                    classes = "text-4xl text-center w-full focus:outline-hidden w-full"
+                    classes = "w-full text-center text-2xl sm:text-4xl p-3 rounded focus:outline-hidden"
                 ) {
+                    // autocomplete="off" autocorrect="off" autocapitalize="off"
+                    autoComplete = "off"
+                    attributes["autocorrect"] = "off"
+                    attributes["autocapitalize"] = "off"
                     required = true
                     name = "url"
                     id = "url"
                     placeholder = "Your URL here."
                 }
 
-                hopButton { +"Go" }
+                button(
+                    classes = "w-full sm:w-auto border px-4 py-2 rounded hover:bg-onbrand hover:text-brand transition"
+                ) { +"Go" }
             }
         }
+
+        yurlFooter()
     }
 }
 
@@ -39,13 +45,13 @@ fun HTML.shortUrlCreatedPage(
 ) {
     headContent(pageTitle = "Success!", basePath = basePath)
 
-    body(classes = "w-screen h-screen font-mono") {
+    yurlBody {
         mainLayout {
-            h1(classes = "text-3xl") { +"Your short URL is" }
+            h1(classes = "text-2xl sm:text-3xl") { +"Your short URL is" }
             a(
                 href = createdUrl,
                 target = null,
-                classes = "text-3xl font-bold hover:underline visited:text-purple-600"
+                classes = "text-2xl sm:text-3xl font-bold hover:underline visited:text-purple-600 break-all"
             ) {
                 +createdUrl
             }
@@ -53,39 +59,43 @@ fun HTML.shortUrlCreatedPage(
             a(
                 href = basePath,
                 target = null,
-                classes = "$hopButtonClasses text-center"
+                classes = "border px-4 py-2 rounded hover:bg-onbrand hover:text-brand transition"
             ) {
                 +"Go again"
             }
         }
+
+        yurlFooter()
     }
 }
 
 // =====
 
-private fun FlowContent.hopFooter() =
-    footer(classes = "flex text-onbrand p-5") {
+private fun FlowContent.yurlFooter() =
+    footer(classes = "text-center p-4") {
         a(
-            classes = "text-sm underline visited:text-purple-700",
+            classes = "text-sm underline",
             href = "https://github.com/nikolaDrljaca/yurl"
         ) {
             +"View on GitHub"
         }
     }
 
-private inline fun FlowContent.mainLayout(
-    crossinline block: FlowContent.() -> Unit
-) {
-    div(classes = "relative w-screen h-screen bg-brand") {
-        div(classes = "flex flex-col w-screen h-screen items-center justify-between") {
-            div(classes = "text-onbrand p-1 lg:p-10 flex flex-col items-center justify-center space-y-12 w-full h-full") {
-                block()
-            }
+private inline fun HTML.yurlBody(
+    crossinline block: BODY.() -> Unit
+) = body(
+    classes = "min-h-screen flex flex-col font-mono bg-brand text-onbrand",
+    block = block
+)
 
-            hopFooter()
-        }
-    }
-}
+private inline fun FlowContent.mainLayout(
+    crossinline block: MAIN.() -> Unit
+) = main(
+    classes = "flex-grow container mx-auto flex flex-col items-center justify-center px-4 space-y-10",
+    block = block
+)
+
+//==== head and meta
 
 private fun HTML.headContent(
     basePath: String,
@@ -94,6 +104,8 @@ private fun HTML.headContent(
 ) {
     head {
         title { +pageTitle }
+        meta(name = "viewport", content = "width=device-width, initial-scale=1")
+        meta(charset = "UTF-8")
         meta(name = "description", content = "Yet another URL shortener.")
         link(rel = "icon", href = "/favicon.ico", type = "image/x-icon")
         link(rel = "canonical", href = basePath)
@@ -130,26 +142,4 @@ private fun HTML.headContent(
 private fun FlowOrMetaDataOrPhrasingContent.meta(property: String, content: String) = meta {
     attributes["property"] = property
     this.content = content
-}
-
-private val hopButtonClasses = """
-    text-onbrand
-    bg-transparent
-    box-border
-    border 
-    border-bg-onbrand
-    transition
-    hover:bg-onbrand
-    hover:text-brand
-    focus:ring-2 focus:ring-white-300 
-    shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none cursor-pointer w-xs
-""".trimIndent()
-
-private inline fun FlowContent.hopButton(
-    crossinline block: FlowContent.() -> Unit
-) {
-    button(
-        classes = hopButtonClasses,
-        block = block
-    )
 }
