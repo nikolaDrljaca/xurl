@@ -66,26 +66,6 @@ fun Application.configureShortUrlRoutes() = routing {
     val createShortUrl: CreateShortUrl by dependencies
     val config: ShortUrlServiceConfiguration by dependencies
 
-    post("/create-url") {
-        val params = call.receiveParameters()
-        log.info("create-url called with $params")
-        val url = params["url"]
-        // handle response
-        when (val result = createShortUrl.execute(url)) {
-            is ShortUrlResult.InvalidUrl -> call.respond(HttpStatusCode.BadRequest, "")
-
-            is ShortUrlResult.NoUrl -> call.respond(HttpStatusCode.BadRequest, "")
-
-            is ShortUrlResult.Success -> call.respondHtml {
-                shortUrlCreatedPage(
-                    basePath = config.basePath,
-                    createdUrl = createFullUrl(config.basePath, result.data.key)
-                )
-            }
-
-        }
-    }
-
     post("/l") {
         // parse payload and create hop
         val payload = call.receive<CreateShortUrlPayload>()
@@ -124,9 +104,30 @@ fun Application.configureShortUrlRoutes() = routing {
 }
 
 fun Application.configureViewRoutes() = routing {
+    val createShortUrl: CreateShortUrl by dependencies
     val config: ShortUrlServiceConfiguration by dependencies
     // static assets
     staticResources("/", "public")
+
+    post("/create-url") {
+        val params = call.receiveParameters()
+        log.info("create-url called with $params")
+        val url = params["url"]
+        // handle response
+        when (val result = createShortUrl.execute(url)) {
+            is ShortUrlResult.InvalidUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.NoUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.Success -> call.respondHtml {
+                shortUrlCreatedPage(
+                    basePath = config.basePath,
+                    createdUrl = createFullUrl(config.basePath, result.data.key)
+                )
+            }
+
+        }
+    }
 
     get("/") {
         call.respondHtml {
