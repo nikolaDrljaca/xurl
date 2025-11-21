@@ -1,11 +1,13 @@
 package com.drbrosdev
 
+import glide.api.GlideClient
 import io.ktor.http.*
 import org.apache.commons.lang3.RandomStringUtils
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import kotlinx.coroutines.future.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -36,32 +38,57 @@ data class ShortUrl(
     val createdAt: LocalDate
 )
 
+sealed interface ShortUrlResult {
+    data class Success(val data: ShortUrl) : ShortUrlResult
+
+    data object InvalidUrl : ShortUrlResult
+
+    data object NoUrl : ShortUrlResult
+}
+
 // Use Cases
 
 fun interface CreateShortUrl {
-    suspend fun execute(url: String): ShortUrl
+    suspend fun execute(url: String?): ShortUrlResult
 }
 
-class CreateShortUrlImpl : CreateShortUrl {
-    override suspend fun execute(url: String): ShortUrl = transaction {
-        // verify url is valid -> move to a domain model and smart constructor
-        requireNotNull(parseUrl(url)) { "$url is not a valid URL." }
-        // create new key and insert
-        val row = retry {
-            ShortUrlTable.insert {
-                it[ShortUrlTable.key] = createKey()
-                it[ShortUrlTable.longUrl] = url
+class CreateShortUrlImpl(
+    private val cacheAccessor: suspend () -> GlideClient?
+) : CreateShortUrl {
+    override suspend fun execute(url: String?): ShortUrlResult {
+        // validate incoming url
+        if (url == null) {
+            return ShortUrlResult.NoUrl
+        }
+        if (parseUrl(url) == null) {
+            return ShortUrlResult.InvalidUrl
+        }
+
+        // store in database
+        var output = transaction {
+            // create new key and insert
+            val row = retry {
+                ShortUrlTable.insert {
+                    it[ShortUrlTable.key] = createKey()
+                    it[ShortUrlTable.longUrl] = url
+                }
+            }
+            requireNotNull(row) { "Unable to generate unique hop key!" }
+            ShortUrl(
+                id = row[ShortUrlTable.id],
+                key = row[ShortUrlTable.key],
+                url = row[ShortUrlTable.longUrl],
+                createdAt = LocalDate.parse(row[ShortUrlTable.createdAt])
+            ).also {
+                LOG.info("Generated ${it.key} for ${it.url}.")
             }
         }
-        requireNotNull(row) { "Unable to generate unique hop key!" }
-        ShortUrl(
-            id = row[ShortUrlTable.id],
-            key = row[ShortUrlTable.key],
-            url = row[ShortUrlTable.longUrl],
-            createdAt = LocalDate.parse(row[ShortUrlTable.createdAt])
-        ).also {
-            LOG.info("Generated ${it.key} for ${it.url}.")
-        }
+
+        // store in cache
+        cacheAccessor()?.set(output.key, output.url)?.await()
+
+        // return
+        return ShortUrlResult.Success(output)
     }
 
     private fun <T> retry(

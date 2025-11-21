@@ -100,15 +100,17 @@ fun Application.configureFrameworks() {
     val appConfig = environment.configuration()
 
     dependencies {
-        provide<CreateShortUrl> { CreateShortUrlImpl() }
-        provide<FindShortUrlByKey> { FindShortUrlByKeyImpl() }
-        provide<ShortUrlServiceConfiguration> { appConfig }
-
         provide<GlideClient?> {
             createGlideClient(valkeyConfig)
                 .onSuccess { LOG.info("Started Glide client at ${valkeyConfig.host}:${valkeyConfig.port}") }
                 .onFailure { LOG.warn("Could not start Glide Client!") }
                 .getOrNull()
         } cleanup { it?.close() }
+
+        provide<CreateShortUrl> {
+            CreateShortUrlImpl(cacheAccessor = { resolve() })
+        }
+        provide<FindShortUrlByKey> { FindShortUrlByKeyImpl() }
+        provide<ShortUrlServiceConfiguration> { appConfig }
     }
 }
