@@ -11,7 +11,7 @@ fun HTML.createUrlPage(
         mainLayout {
             p(classes = "text-xl sm:text-2xl text-center") { +"Yet Another URL Shortener" }
             postForm(
-                encType = FormEncType.textPlain,
+                encType = FormEncType.applicationXWwwFormUrlEncoded,
                 action = "/create-url",
                 classes = "w-full max-w-xl flex flex-col items-center space-y-8"
             ) {

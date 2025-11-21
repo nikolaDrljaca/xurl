@@ -40,33 +40,22 @@ data class ShortUrlDto(
     val url: String,
     val fullUrl: String,
     val createdAt: String
-)
-
-suspend fun createHopRouteHandler(
-    url: String,
-    fullPath: String,
-    createShortUrl: CreateShortUrl,
-    cacheAccessor: suspend () -> GlideClient?
-): ShortUrlDto = coroutineScope {
-    // create url
-    val hop = createShortUrl.execute(url)
-    // cache created hop
-    // NOTE: since it is accessed here, it will suspend until a client is created
-    val cache: GlideClient? = cacheAccessor()
-    when {
-        cache != null -> cache.set(hop.key, hop.url).await()
-
-        else -> Unit
+) {
+    companion object {
+        fun from(value: ShortUrl, basePath: String) = ShortUrlDto(
+            id = value.id.toString(),
+            key = value.key,
+            url = value.url,
+            createdAt = value.createdAt.format(DateTimeFormatter.ISO_DATE),
+            fullUrl = "$basePath/l/${value.key}"
+        )
     }
-    // prepare response
-    ShortUrlDto(
-        id = hop.id.toString(),
-        key = hop.key,
-        url = hop.url,
-        createdAt = hop.createdAt.format(DateTimeFormatter.ISO_DATE),
-        fullUrl = "$fullPath/l/${hop.key}"
-    )
 }
+
+fun createFullUrl(
+    basePath: String,
+    slug: String
+): String = "$basePath/l/${slug}"
 
 fun Application.configureShortUrlRoutes() = routing {
     /*
@@ -78,26 +67,22 @@ fun Application.configureShortUrlRoutes() = routing {
     val config: ShortUrlServiceConfiguration by dependencies
 
     post("/create-url") {
-        val payload = call.receiveText()
-        log.info("create-url received $payload")
-        log.info("create-url called with: remoteHost=${call.request.origin.remoteHost} and remoteAddress=${call.request.origin.remoteAddress}")
-        // NOTE: content is
-        // name1=value1
-        // name2=value2
-        val url = payload.split("=", limit = 2)
-            .drop(1) // drop the url= part
-            .joinToString { it.trim() } // take all the rest
-        val response = createHopRouteHandler(
-            url = url,
-            fullPath = config.basePath,
-            createShortUrl = createShortUrl,
-            cacheAccessor = { dependencies.resolve() }
-        )
-        call.respondHtml {
-            shortUrlCreatedPage(
-                basePath = config.basePath,
-                createdUrl = response.fullUrl
-            )
+        val params = call.receiveParameters()
+        log.info("create-url called with $params")
+        val url = params["url"]
+        // handle response
+        when (val result = createShortUrl.execute(url)) {
+            is ShortUrlResult.InvalidUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.NoUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.Success -> call.respondHtml {
+                shortUrlCreatedPage(
+                    basePath = config.basePath,
+                    createdUrl = createFullUrl(config.basePath, result.data.key)
+                )
+            }
+
         }
     }
 
@@ -106,13 +91,16 @@ fun Application.configureShortUrlRoutes() = routing {
         val payload = call.receive<CreateShortUrlPayload>()
         log.info("createHop called with $payload.")
         // prepare response
-        val response = createHopRouteHandler(
-            url = payload.url,
-            fullPath = config.basePath,
-            createShortUrl = createShortUrl,
-            cacheAccessor = { dependencies.resolve() }
-        )
-        call.respond(HttpStatusCode.Created, response)
+        when (val result = createShortUrl.execute(payload.url)) {
+            is ShortUrlResult.InvalidUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.NoUrl -> call.respond(HttpStatusCode.BadRequest, "")
+
+            is ShortUrlResult.Success -> {
+                val response = ShortUrlDto.from(result.data, config.basePath)
+                call.respond(HttpStatusCode.Created, response)
+            }
+        }
     }
 
     get("/l/{hop_key}") {
