@@ -60,7 +60,9 @@ class CreateShortUrlImpl(
         if (url == null) {
             return ShortUrlResult.NoUrl
         }
-        if (parseUrl(url) == null) {
+        val parsed = parseUrl(url) ?: return ShortUrlResult.InvalidUrl
+
+        if (parsed.protocol !in setOf(URLProtocol.HTTP, URLProtocol.HTTPS)) {
             return ShortUrlResult.InvalidUrl
         }
 
