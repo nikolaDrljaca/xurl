@@ -115,9 +115,19 @@ fun Application.configureViewRoutes() = routing {
         val url = params["url"]
         // handle response
         when (val result = createShortUrl.execute(url)) {
-            is ShortUrlResult.InvalidUrl -> call.respond(HttpStatusCode.BadRequest, "")
+            is ShortUrlResult.InvalidUrl -> call.respondHtml {
+                yurlErrorPage(
+                    code = HttpStatusCode.BadRequest,
+                    basePath = config.basePath
+                )
+            }
 
-            is ShortUrlResult.NoUrl -> call.respond(HttpStatusCode.BadRequest, "")
+            is ShortUrlResult.NoUrl -> call.respondHtml {
+                yurlErrorPage(
+                    code = HttpStatusCode.BadRequest,
+                    basePath = config.basePath
+                )
+            }
 
             is ShortUrlResult.Success -> call.respondHtml {
                 shortUrlCreatedPage(
