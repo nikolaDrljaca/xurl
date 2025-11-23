@@ -1,5 +1,6 @@
 package com.drbrosdev
 
+import io.ktor.http.HttpStatusCode
 import kotlinx.html.*
 
 fun HTML.createUrlPage(
@@ -56,13 +57,30 @@ fun HTML.shortUrlCreatedPage(
                 +createdUrl
             }
 
-            a(
-                href = basePath,
-                target = null,
-                classes = "border px-4 py-2 rounded hover:bg-onbrand hover:text-brand transition"
-            ) {
-                +"Go again"
+            goAgainAnchor(basePath)
+        }
+
+        yurlFooter()
+    }
+}
+
+fun HTML.yurlErrorPage(code: HttpStatusCode, basePath: String) {
+    headContent(pageTitle = "Something went wrong.", basePath = basePath)
+
+    yurlBody {
+        mainLayout {
+
+            p(classes = "mb-4 text-sm font-semibold uppercase text-red-500 md:text-base") {
+                +"That's a ${code.value}"
             }
+            h1(classes = "mb-2 text-center text-2xl font-fold text-onbrand md:text-3xl") {
+                +code.description
+            }
+            p(classes = "mb-12 max-w-screen-md text-center text-gray-500 md:text-lg") {
+                +"We can't process that request."
+            }
+
+            goAgainAnchor(basePath)
         }
 
         yurlFooter()
@@ -70,6 +88,13 @@ fun HTML.shortUrlCreatedPage(
 }
 
 // =====
+//
+
+private fun FlowContent.goAgainAnchor(href: String) = a(
+    href = href,
+    target = null,
+    classes = "border px-4 py-2 rounded hover:bg-onbrand hover:text-brand transition"
+) { +"Go again" }
 
 private fun FlowContent.yurlFooter() =
     footer(classes = "text-center p-4") {
